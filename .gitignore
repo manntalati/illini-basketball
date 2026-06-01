@@ -9,4 +9,4 @@ data/cache/
 report/*.pdf
 !report/writeup.pdf
 .streamlit/secrets.toml
-.claude
+.claude/
