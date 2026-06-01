@@ -1,0 +1,190 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Illini Portal Fit Engine — Write-up</title><style>
+@page { size: letter; margin: 2cm; }
+body { font-family: Helvetica, Arial, sans-serif; color: #1c2533;
+        line-height: 1.5; font-size: 11pt; }
+h1 { color: #13294B; border-bottom: 4px solid #E84A27; padding-bottom: 6px;
+      font-size: 22pt; margin-bottom: 2px; }
+h2 { color: #13294B; border-left: 6px solid #E84A27; padding-left: 10px;
+      margin-top: 22px; font-size: 15pt; }
+h3 { color: #E84A27; margin-top: 0; font-weight: 600; }
+a { color: #E84A27; text-decoration: none; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.5pt; }
+th { background: #13294B; color: #fff; text-align: left; padding: 6px 8px; }
+td { border: 1px solid #d6dbe4; padding: 6px 8px; vertical-align: top; }
+tr:nth-child(even) td { background: #f4f6fa; }
+code { background: #eef1f6; padding: 1px 4px; border-radius: 3px;
+        font-family: "Courier New", monospace; font-size: 9.5pt; }
+pre { background: #f4f6fa; border-left: 4px solid #E84A27; padding: 10px;
+       overflow-x: auto; }
+pre code { background: none; }
+hr { border: none; border-top: 1px solid #d6dbe4; margin: 18px 0; }
+strong { color: #13294B; }
+em { color: #4a5568; }
+</style></head>
+<body><h1>Illini Portal Fit Engine</h1>
+<h3>A transfer-portal recruiting target board for Illinois Men's Basketball</h3>
+<p><strong>Author:</strong> Mannat Talati · <strong>Built for:</strong> Illinois Men's Basketball Analytics Internship
+<strong>Live app:</strong> <em>(Streamlit link — see README)</em> · <strong>Code:</strong> <em>(GitHub link — see README)</em></p>
+<hr />
+<h2>1. The problem</h2>
+<p>Roster construction in college basketball now runs through the transfer portal. Every
+spring, 1,500+ Division I players enter, and a staff has a few weeks to decide who to
+pursue. Illinois under Brad Underwood has been one of the most aggressive portal and
+international programs in the country, so this is not a side project for the staff — it
+<em>is</em> the roster.</p>
+<p>The hard part is not finding <em>good</em> players; it is finding good players who <strong>(a)</strong> fill a
+<strong>specific hole</strong> the roster just opened, <strong>(b)</strong> fit how Illinois actually plays, and
+<strong>(c)</strong> are <strong>realistic</strong> to land. Doing that by eye across all of Division I is slow and
+biased toward the names you already know.</p>
+<p><strong>This tool turns that triage into a ranked, explainable board.</strong> It profiles Illinois's
+roster, detects what's leaving, and scores every eligible D-I player on a transparent
+<strong>Fit Score</strong> so the staff can start the portal window with a shortlist instead of a blank
+page.</p>
+<h2>2. The data — and how I sourced it</h2>
+<p>Everything is <strong>public BartTorvik data</strong>, pulled live over plain HTTP (no scraping tricks,
+no paywalled sources like KenPom):</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Endpoint</th>
+<th>What it gives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Player advanced stats</td>
+<td><code>getadvstats.php?year=YYYY&amp;csv=1</code></td>
+<td>~5,000 players/season, 67 columns: archetype role, usage, efficiency, shooting splits, BPM/OBPM/DBPM, rebounding, steals/blocks, class, height, hometown</td>
+</tr>
+<tr>
+<td>Team ratings</td>
+<td><code>YYYY_team_results.json</code></td>
+<td>365 teams: adjusted offense/defense, Barthag power rating, tempo</td>
+</tr>
+</tbody>
+</table>
+<p>The player feed ships with <strong>no header row</strong>, so I reverse-engineered the column layout and
+then <strong>validated it against the data itself</strong> before trusting a single number:</p>
+<ul>
+<li>shooting splits reconcile (FTM ÷ FTA = FT%, etc.),</li>
+<li><code>BPM == OBPM + DBPM</code> holds for <strong>100%</strong> of rows,</li>
+<li><code>total rebounds == offensive + defensive</code> per game holds for <strong>100%</strong> of rows.</li>
+</ul>
+<p>Columns I could not verify are named <code>extra_NN</code> and are <strong>deliberately unused</strong>, so every
+figure the tool reports is one I can explain on a whiteboard.</p>
+<p>A real snapshot is committed to the repo, so the app loads instantly for a reviewer and the
+results are reproducible; a "Refresh from BartTorvik" button re-pulls live data on demand.</p>
+<h2>3. How the Fit Score works</h2>
+<p>For the current (2025-26) season, the engine reads Illinois as: **28-9, Barthag #6, the</p>
+<h1>2 offense in the country (adjOE 131.8), #20 defense, and — notably — the #289 tempo.**</h1>
+<p>That last number matters: Illinois is an <em>elite half-court</em> team, <strong>not</strong> a run-and-gun
+team, so the model rewards skill and shot-making over raw transition athleticism. The
+profile is <em>derived from data</em>, not assumed.</p>
+<p>It then assumes seniors graduate (editable in the app) — for 2025-26 that's lead guard
+<strong>Kylan Boswell</strong>, stretch big <strong>Ben Humrichous</strong>, and <strong>AJ Redd</strong> — and measures what
+walks out the door: a chunk of the team's <strong>playmaking, perimeter defense, and outside
+shooting</strong>.</p>
+<p>Each eligible candidate (non-Illinois, has remaining eligibility, cleared minimum
+minutes/games) gets a <strong>0-100 Fit Score</strong>, a weighted blend of four parts that are each
+shown separately:</p>
+<ol>
+<li><strong>Production</strong> — proven value: BPM, porpag, minutes load.</li>
+<li><strong>Role fit</strong> — does their position fill a <em>depleted</em> Illinois spot (guard / wing / big)?</li>
+<li><strong>System fit</strong> — do their strengths match the <strong>specific</strong> skills Illinois must replace?
+   The weights here come straight from the departure analysis (e.g. "we lost 24% of our
+   made threes" → shooting is weighted up).</li>
+<li><strong>Attainability</strong> — a realism lens from the player's current team strength, surfaced as a
+   plain label: <em>High-major proven</em>, <em>Mid-major riser</em>, <em>Low-major standout</em>.</li>
+</ol>
+<p>Every component is percentile-ranked <strong>within the candidate pool</strong>, so a score answers the
+question a coach actually asks: <em>"compared to the other realistic options, how good is
+this?"</em> All four weights, the departure list, and the need weights are <strong>tunable live</strong> in
+the app.</p>
+<p><strong>Example output (default Illinois needs, 2025-26):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Fit</th>
+<th>Player</th>
+<th>Team</th>
+<th>Role</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>86.8</td>
+<td>Jason Rivera-Torres</td>
+<td>Monmouth</td>
+<td>Wing F</td>
+<td>3.3% steal rate; 1.5 3PM/g; +5.5 BPM — perimeter D + shooting; mid-major riser</td>
+</tr>
+<tr>
+<td>85.3</td>
+<td>Tyler Tanner</td>
+<td>Vanderbilt</td>
+<td>Scoring PG</td>
+<td>5.1 ast/g (29 AST%); +10.2 BPM — playmaking; high-major proven</td>
+</tr>
+<tr>
+<td>85.1</td>
+<td>Mason Falslev</td>
+<td>Utah St.</td>
+<td>Combo G</td>
+<td>3.6% steal rate; 3.1 ast/g; +8.8 BPM — perimeter D + playmaking</td>
+</tr>
+</tbody>
+</table>
+<p>Each row carries an auto-generated scouting note, and the <strong>Player Detail</strong> view breaks the
+score into its four bars next to the player's full statistical profile.</p>
+<h2>4. How I built it</h2>
+<ul>
+<li><strong>Language:</strong> Python 3.</li>
+<li><strong>Data / model:</strong> <code>pandas</code>, <code>numpy</code> — a small, readable package (<code>illini_fit/</code>) split into
+  <code>schema</code> (validated column map), <code>fetch</code> (cache + live refresh), <code>profile</code> (team + roster),
+  <code>needs</code> (departure-driven gap detection), and <code>fit_score</code> (the scoring model).</li>
+<li><strong>App:</strong> <code>streamlit</code> — an interactive, Illini-themed web app (filters, weight sliders,
+  ranked board, player detail, CSV export).</li>
+<li><strong>Quality:</strong> the data layer and the model each ship with self-checks (row-count and
+  Illinois-parse assertions; a test that a shooting-weighted board really does surface more
+  shooters and that scores stay in 0-100). The app is verified headlessly with Streamlit's
+  <code>AppTest</code>.</li>
+<li><strong>Deploy:</strong> GitHub + Streamlit Community Cloud (one-click, free) for a shareable live link.</li>
+</ul>
+<h2>5. Why it's useful to a GM / coaching staff</h2>
+<ul>
+<li><strong>It starts the portal window with a shortlist, not a spreadsheet.</strong> Day one of the portal,
+  the staff has a ranked, position-aware board instead of 1,500 names.</li>
+<li><strong>It's tied to <em>this</em> roster's needs.</strong> The board re-ranks the moment you mark a player as
+  leaving — so the night a starter enters the portal, you instantly see who replaces <em>his</em>
+  production, not just "good players."</li>
+<li><strong>It's explainable to non-analysts.</strong> Every score decomposes into production / role /
+  system / attainability with a one-line rationale. That's defensible in a staff meeting and
+  to a head coach who wants the <em>why</em>, not a black box.</li>
+<li><strong>It encodes Illinois's identity from data.</strong> Because system fit is derived from Illinois's
+  actual profile (elite half-court offense, slow tempo, shooting), it won't recommend a
+  player who is good in the abstract but wrong for how Illinois plays.</li>
+<li><strong>It's tunable on the fly.</strong> A coach who wants to prioritize a defensive guard over a
+  scoring one just moves a slider; the board updates in real time.</li>
+</ul>
+<p>In practice the staff intersects this board with the live portal list (which they have and
+which is not a clean public feed): the engine ranks the full pool by fit, and the staff
+filters to who's actually available. That mirrors how an analytics staffer already works —
+this just does the heavy ranking in seconds.</p>
+<h2>6. Honest limitations &amp; next steps</h2>
+<ul>
+<li><strong>Portal availability isn't a clean public dataset</strong>, so the engine ranks the full pool and
+  is meant to be filtered to the live portal list. A natural v2 is to ingest a portal feed and
+  auto-filter.</li>
+<li><strong>One season of box-score data</strong> underrates injured/young players and can overrate
+  high-usage players on bad teams; attainability and minutes filters mitigate this but don't
+  eliminate it. Multi-year trends and play-type data (Synergy/Hudl, if licensed) would sharpen it.</li>
+<li><strong>Fit weights are a reasonable default, not gospel</strong> — which is exactly why they're exposed
+  as sliders for the staff to own.</li>
+<li><strong>No NIL/cost modeling.</strong> A real GM board would layer in budget; that data isn't public.</li>
+</ul>
+<hr />
+<p><em>All data is publicly sourced from BartTorvik. Built as an independent analytics project for
+the Illinois Men's Basketball Analytics Internship.</em></p></body></html>

@@ -1,0 +1,10 @@
+[theme]
+# University of Illinois colors: Illini Orange + Illini Blue (navy)
+primaryColor = "#E84A27"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F4F8"
+textColor = "#13294B"
+font = "sans serif"
+
+[server]
+headless = true
