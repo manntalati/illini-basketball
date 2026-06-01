@@ -4,6 +4,16 @@ Run locally:  streamlit run streamlit_app.py
 """
 from __future__ import annotations
 
+import os
+
+# Force matplotlib's headless raster backend BEFORE anything imports it, so the
+# server never tries to load a macOS GUI or cairo backend (which needs native
+# libcairo). We only rasterize PNGs for the scouting radar — Agg is sufficient.
+os.environ["MPLBACKEND"] = "Agg"
+
+import base64
+import io
+
 import pandas as pd
 import streamlit as st
 
@@ -17,6 +27,15 @@ from illini_fit.profile import (
     roster_identity,
     team_profile,
 )
+from illini_fit.scouting import (
+    bigten_baseline,
+    build_projection,
+    card_html,
+    card_to_pdf,
+    radar_figure,
+)
+from illini_fit.similarity import build_reference, comps as style_comps, replacements_for
+from illini_fit.translation import calibrate
 
 st.set_page_config(page_title="Illini Portal Fit Engine", page_icon="🟧", layout="wide")
 
@@ -27,6 +46,18 @@ st.set_page_config(page_title="Illini Portal Fit Engine", page_icon="🟧", layo
 @st.cache_data(show_spinner="Loading BartTorvik data…")
 def load_data(season: int, _nonce: int = 0):
     return get_players(season), get_teams(season)
+
+
+@st.cache_data(show_spinner="Calibrating Big Ten translation model…")
+def load_model(season: int, _nonce: int = 0):
+    return calibrate(illinois_season=season)
+
+
+@st.cache_data(show_spinner="Building style reference…")
+def load_reference(season: int, _nonce: int = 0):
+    players, _ = load_data(season, _nonce)
+    mu, sigma = build_reference(players)
+    return mu, sigma
 
 
 # --------------------------------------------------------------------------- #
@@ -140,6 +171,27 @@ with tab_needs:
                 key=f"sp_{cat}")
         needs = {**needs, "position_need": pn, "stat_priority": sp}
 
+    st.markdown("#### 🔁 Stylistic replacements for a departing player")
+    if departures:
+        dep_pick = st.selectbox("Find transfers who play like…", departures)
+        dep_row = roster[roster["player"] == dep_pick].iloc[0]
+        mu_r, sigma_r = load_reference(season, st.session_state.nonce)
+        rep_pool = candidate_pool(players, teams, min_gp=min_gp,
+                                  min_min_pct=min_min, include_seniors=include_sr)
+        rep = replacements_for(dep_row, rep_pool, mu_r, sigma_r, n=8)
+        st.caption(f"Closest stylistic matches to **{dep_pick}** "
+                   f"({dep_row['role']}) in the transfer-eligible pool")
+        st.dataframe(
+            rep[["player", "team", "conf", "role", "yr", "similarity",
+                 "pts_pg", "three_pm", "ast_pg", "bpm"]]
+            .rename(columns={"similarity": "style match", "three_pm": "3PM"}),
+            width="stretch", hide_index=True,
+            column_config={"style match": st.column_config.ProgressColumn(
+                "Style match", min_value=0, max_value=100, format="%.0f")},
+        )
+    else:
+        st.caption("Mark a departure above to see who best replaces his style.")
+
 # --------------------------------------------------------------------------- #
 # Build + score board
 # --------------------------------------------------------------------------- #
@@ -153,7 +205,10 @@ if conf_sel:
     pool = pool[pool["conf"].isin(conf_sel)]
 pool = pool.reset_index(drop=True)
 
+model = load_model(season, st.session_state.nonce)
 board = score_pool(pool, needs, weights) if len(pool) else pool
+if len(board):
+    board = model.project(board)  # adds raw_/proj_ box line, retention, level_jump
 
 with tab_board:
     if not len(board):
@@ -166,9 +221,13 @@ with tab_board:
         top_n = st.slider("Show top N", 10, 100, 25)
         show = board.head(top_n).copy()
         show.insert(0, "rank", range(1, len(show) + 1))
+        st.caption(f"**Proj pts** = raw scoring translated to Illinois's level via "
+                   f"{model.n_pairs} real cross-season transfers; **Keep%** is the "
+                   f"share of raw scoring that survives the jump.")
         st.dataframe(
             show[["rank", "player", "team", "conf", "role", "yr", "fit_score",
                   "production", "role_fit", "system_fit", "attainability",
+                  "raw_pts_pg", "proj_pts_pg", "retention", "level_jump",
                   "attain_label", "rationale"]],
             width="stretch", hide_index=True,
             column_config={
@@ -178,6 +237,10 @@ with tab_board:
                 "role_fit": st.column_config.NumberColumn("Role", format="%.0f"),
                 "system_fit": st.column_config.NumberColumn("System", format="%.0f"),
                 "attainability": st.column_config.NumberColumn("Attain", format="%.0f"),
+                "raw_pts_pg": st.column_config.NumberColumn("Raw pts", format="%.1f"),
+                "proj_pts_pg": st.column_config.NumberColumn("Proj pts", format="%.1f"),
+                "retention": st.column_config.NumberColumn("Keep%", format="%.0f"),
+                "level_jump": st.column_config.TextColumn("Level jump"),
                 "rationale": st.column_config.TextColumn("Scouting note", width="large"),
             },
         )
@@ -218,6 +281,57 @@ with tab_detail:
                       f"{r['ast_pct']:.0f}", f"{r['to_pct']:.0f}", f"{r['blk_pct']:.1f}",
                       f"{r['stl_pct']:.1f}", f"{r['ts']:.1f}%", f"{r['pts_pg']:.1f}"],
         }), width="stretch", hide_index=True)
+
+        # ---- Scouting card: radar + translation + comps + printable PDF ----
+        st.divider()
+        st.markdown("#### 🃏 Scouting card")
+        base = bigten_baseline(players)
+        mu, sigma = load_reference(season, st.session_state.nonce)
+
+        card_l, card_r = st.columns([1, 1])
+        with card_l:
+            fig = radar_figure(r, base)
+            st.pyplot(fig)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
+            radar_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+        with card_r:
+            proj = build_projection(model, r)
+            st.markdown(f"**Big Ten projection** · {proj['level_jump']} · "
+                        f"~{proj['retention']:.0f}% of raw scoring survives")
+            st.dataframe(pd.DataFrame(proj["lines"],
+                                      columns=["Stat", "Raw", "At Illinois"]),
+                         width="stretch", hide_index=True)
+
+            strength = teams.set_index("team")["barthag"]
+            hi = players[(players["gp"] >= 15) & (players["min_pct"] >= 40)].copy()
+            hi = hi[hi["team"].map(strength).fillna(0) >= 0.80]
+            cmp = style_comps(r, hi, mu, sigma, n=5, exclude_pid=r.get("pid"))
+            st.caption("Plays like (high-major comps)")
+            st.dataframe(cmp[["player", "team", "conf", "similarity"]]
+                         .rename(columns={"similarity": "sim"}),
+                         width="stretch", hide_index=True)
+
+        card = card_html(r, base, radar_b64=radar_b64, projection=proj,
+                         comps=cmp, rationale=r["rationale"])
+        safe_name = pick.replace(" ", "_")
+        try:
+            st.download_button(
+                "⬇️ Download 1-page scouting card (PDF)", card_to_pdf(card),
+                file_name=f"{safe_name}_scouting_card.pdf",
+                mime="application/pdf")
+        except Exception:
+            # Some environments lack a working reportlab raster backend
+            # (e.g. a python.org build whose reportlab pulls in libcairo).
+            # Fall back to a self-contained HTML card the staff can open
+            # in any browser and print to PDF — the app never crashes.
+            st.download_button(
+                "⬇️ Download 1-page scouting card (HTML)", card.encode("utf-8"),
+                file_name=f"{safe_name}_scouting_card.html",
+                mime="text/html")
+            st.caption("PDF export is unavailable in this environment — "
+                       "open the HTML card in a browser and print to PDF.")
 
 st.caption("Data: BartTorvik (public). Fit Score is a transparent weighted blend of "
            "production, positional fit, system fit, and attainability — all tunable above.")

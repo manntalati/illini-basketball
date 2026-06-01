@@ -24,6 +24,18 @@ Score** so the staff can walk into the portal window with a shortlist instead of
 4. **Lets the staff drive** — tune weights, edit departures, re-weight needs, filter by
    conference/position/class, and export the board to CSV — all live.
 
+### Beyond the score — three scouting tools
+
+- **Big Ten Translation** — projects every candidate's raw box line to *Illinois's level*,
+  calibrated on **990 real cross-season transfers** (matched by stable player id). Learns from
+  data that *efficiency and made-shooting travel but raw volume deflates* — so a 21-ppg SWAC
+  scorer shows as ~6.5 ppg in the Big Ten, with a **Keep%** and a level-jump risk label.
+- **Player comps** — z-scored style vectors + nearest-neighbour search: turn a departing Illini
+  into a ranked list of transfer-eligible look-alikes, and tag every target with its closest
+  high-major comps.
+- **Visual scouting cards** — a percentile **radar vs the Big Ten**, the raw→projected line, a
+  shot diet, and comps, exportable to a **printable 1-page PDF** per target.
+
 ## Quickstart
 
 ```bash
@@ -41,6 +53,9 @@ The app loads instantly from the committed data snapshot in `data/raw/`. Click
 ```bash
 python -m illini_fit.fetch        # download + validate data (asserts Illinois parses)
 python -m illini_fit.fit_score    # print the default Illinois board + run sanity checks
+python -m illini_fit.translation  # calibrate the Big Ten retention model on real transfers
+python -m illini_fit.similarity   # style replacements for a departing Illini + target comps
+python -m illini_fit.scouting     # write a sample 1-page scouting-card PDF to report/
 ```
 
 ## How the Fit Score is built
@@ -65,11 +80,15 @@ illini-portal-fit/
 │   ├── fetch.py              # download / cache / refresh (with snapshot fallback)
 │   ├── profile.py            # Illinois team + roster profile
 │   ├── needs.py              # departure-driven roster-need detection
-│   └── fit_score.py          # the Fit Score model (+ self-tests)
+│   ├── fit_score.py          # the Fit Score model (+ self-tests)
+│   ├── translation.py        # Big Ten retention model (calibrated on real transfers)
+│   ├── similarity.py         # style-comp / nearest-neighbour engine
+│   └── scouting.py           # percentile radar + printable PDF scouting cards
 ├── data/raw/                 # committed BartTorvik snapshot (reproducible runs)
 ├── report/
-│   ├── writeup.md            # the project write-up
-│   └── sample_board_2026.csv # example output
+│   ├── writeup.md                  # the project write-up
+│   ├── sample_board_2026.csv       # example board output
+│   └── sample_scouting_card.pdf    # example 1-page scouting card
 ├── requirements.txt
 └── .streamlit/config.toml    # Illini orange/navy theme
 ```

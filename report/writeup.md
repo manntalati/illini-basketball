@@ -88,21 +88,85 @@ the app.
 Each row carries an auto-generated scouting note, and the **Player Detail** view breaks the
 score into its four bars next to the player's full statistical profile.
 
-## 4. How I built it
+## 4. Three tools that make the board a scouting product
+
+A ranked list is a start; a staff also needs to know *what the numbers mean at our level*,
+*who a player reminds us of*, and have something they can **print and hand to a coach**.
+Three additions do that — and the first two are calibrated on real history, not assumed.
+
+### 4a. Big Ten Translation — what a box line becomes at Illinois's level
+
+A 20-and-8 against low-major defenses is not a 20-and-8 in the Big Ten, because box-score
+counting stats are **not** opponent-adjusted. To make gaudy lines honest, I learned the
+deflation from data: I matched the **same player across consecutive seasons** using
+BartTorvik's stable player id, found everyone who **changed competition level**, and measured
+how much of each stat survived the jump. The calibration set is **990 real cross-season
+transfers**.
+
+For each stat I fit a one-parameter retention line, anchored so a zero-gap move means no
+change (`ratio = 1 + slope × level_gap`), where the gap is the Barthag distance between the
+player's team and Illinois (Barthag **0.968**). The result is exactly the scouting lesson
+you'd hope for:
+
+| Stat | Survives a jump? | Keeps, at a typical mid-major→Illinois jump |
+|---|---|---|
+| Points / g | deflates most | ~78% |
+| Rebounds / g | deflates | ~84% |
+| Assists / g | deflates | ~86% |
+| Usage% | deflates mildly | ~88% |
+| Made 3s / g | travels well | ~90% |
+| **TS% (efficiency)** | **holds (slope ≈ 0)** | **~101%** |
+
+So **efficiency travels and made-shooting travels; raw volume deflates** — and the deflation
+scales with how big a leap the player is making. Concretely, a 21.4 ppg scorer in the SWAC
+projects to **~6.5 ppg** in the Big Ten ("major jump, high variance"), while a high-major
+star at BYU keeps ~93% of his scoring. The board shows each candidate's **raw line next to its
+projection**, a **Keep%**, and a **level-jump risk label** so a 25-ppg low-major name can't
+masquerade as a 25-ppg Big Ten name.
+
+> Note on double-counting: the Fit Score's *production* component already uses
+> opponent-**adjusted** inputs (BPM, adjusted ratings), so the translation model intentionally
+> leaves the score alone and instead translates the **raw box stats coaches read directly** —
+> keeping both numbers honest and separate.
+
+### 4b. Player comps — "who does he play like?"
+
+During portal season a staff constantly asks two questions: *a starter just left — which
+available transfers replace his style?* and *we like this target — who does he remind us of?*
+Both are nearest-neighbour problems in a **style space**: each player becomes a vector of
+role/skill rates (usage, shot diet, playmaking, ball security, rebounding, rim protection,
+perimeter activity, size, efficiency), **z-scored against the D-I rotation baseline** so every
+axis is comparable. Distance is plain Euclidean — no learned weights — reported as a 0-100
+similarity. The **Program & Needs** page turns a departing Illini into a ranked list of
+transfer-eligible look-alikes; every target carries its closest high-major comps.
+
+### 4c. Visual scouting cards + printable PDF
+
+Coaches read cards, not 60-column CSVs. Each target renders a one-page card: a **percentile
+radar vs the Big Ten rotation** (every spoke is "how would this skill rank in our league?"),
+the **raw → Big Ten projected** box line, a **shot diet** (rim / mid / three share and
+accuracy), and the player's **comps** — exportable to a **self-contained 1-page PDF** the staff
+can print for the board.
+
+## 5. How I built it
 
 - **Language:** Python 3.
 - **Data / model:** `pandas`, `numpy` — a small, readable package (`illini_fit/`) split into
   `schema` (validated column map), `fetch` (cache + live refresh), `profile` (team + roster),
-  `needs` (departure-driven gap detection), and `fit_score` (the scoring model).
+  `needs` (departure-driven gap detection), `fit_score` (the scoring model), `translation`
+  (the Big Ten retention model), `similarity` (the style-comp engine), and `scouting` (radar +
+  PDF cards).
 - **App:** `streamlit` — an interactive, Illini-themed web app (filters, weight sliders,
-  ranked board, player detail, CSV export).
-- **Quality:** the data layer and the model each ship with self-checks (row-count and
-  Illinois-parse assertions; a test that a shooting-weighted board really does surface more
-  shooters and that scores stay in 0-100). The app is verified headlessly with Streamlit's
-  `AppTest`.
+  ranked board with projected lines, player detail, scouting cards, CSV + PDF export);
+  `matplotlib` for the radar and `xhtml2pdf` for the printable card.
+- **Quality:** every module ships with self-checks run as `python -m illini_fit.<module>` —
+  data row-count/Illinois-parse assertions; a test that a shooting-weighted board surfaces
+  more shooters and scores stay in 0-100; that scoring deflates and efficiency holds in the
+  translation model; that a player is his own closest comp. The app is verified headlessly
+  with Streamlit's `AppTest`.
 - **Deploy:** GitHub + Streamlit Community Cloud (one-click, free) for a shareable live link.
 
-## 5. Why it's useful to a GM / coaching staff
+## 6. Why it's useful to a GM / coaching staff
 
 - **It starts the portal window with a shortlist, not a spreadsheet.** Day one of the portal,
   the staff has a ranked, position-aware board instead of 1,500 names.
@@ -115,6 +179,12 @@ score into its four bars next to the player's full statistical profile.
 - **It encodes Illinois's identity from data.** Because system fit is derived from Illinois's
   actual profile (elite half-court offense, slow tempo, shooting), it won't recommend a
   player who is good in the abstract but wrong for how Illinois plays.
+- **It translates production to *our* level.** The Big Ten projection (calibrated on 990 real
+  transfers) stops a 25-ppg low-major name from masquerading as a 25-ppg Big Ten name — the
+  single most common mistake in reading raw portal stats.
+- **It speaks the staff's language.** "Plays like" comps frame an unknown name in terms of
+  players the room already knows, and the 1-page PDF card is something a coach can actually
+  print and carry.
 - **It's tunable on the fly.** A coach who wants to prioritize a defensive guard over a
   scoring one just moves a slider; the board updates in real time.
 
@@ -123,14 +193,18 @@ which is not a clean public feed): the engine ranks the full pool by fit, and th
 filters to who's actually available. That mirrors how an analytics staffer already works —
 this just does the heavy ranking in seconds.
 
-## 6. Honest limitations & next steps
+## 7. Honest limitations & next steps
 
 - **Portal availability isn't a clean public dataset**, so the engine ranks the full pool and
   is meant to be filtered to the live portal list. A natural v2 is to ingest a portal feed and
   auto-filter.
 - **One season of box-score data** underrates injured/young players and can overrate
-  high-usage players on bad teams; attainability and minutes filters mitigate this but don't
-  eliminate it. Multi-year trends and play-type data (Synergy/Hudl, if licensed) would sharpen it.
+  high-usage players on bad teams; attainability, minutes filters, and the Big Ten translation
+  mitigate this but don't eliminate it. Multi-year trends and play-type data (Synergy/Hudl, if
+  licensed) would sharpen it.
+- **The translation model is a population average.** It captures how the typical player's box
+  line deflates with the level jump; an individual can beat or miss it, which is why the card
+  surfaces a *level-jump risk* label rather than a false-precision single number.
 - **Fit weights are a reasonable default, not gospel** — which is exactly why they're exposed
   as sliders for the staff to own.
 - **No NIL/cost modeling.** A real GM board would layer in budget; that data isn't public.

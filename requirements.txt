@@ -2,3 +2,6 @@ streamlit>=1.30
 pandas>=2.0
 numpy>=1.24
 requests>=2.28
+matplotlib>=3.7
+xhtml2pdf>=0.2.11
+markdown>=3.4
