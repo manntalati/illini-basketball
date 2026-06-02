@@ -113,6 +113,40 @@ def radar_figure(player: pd.Series, baseline: pd.DataFrame):
     return fig
 
 
+def compare_radar(players: list, baseline: pd.DataFrame, labels: list | None = None):
+    """Overlay 2-3 players' percentile radars on one axis for head-to-head."""
+    import matplotlib
+    matplotlib.use("Agg", force=True)
+    import matplotlib.pyplot as plt
+
+    colors = [ORANGE, NAVY, "#2E8B57"]
+    labels = labels or [p["player"] for p in players]
+    spoke_labels = [lab for _, lab in RADAR_METRICS]
+    ang = np.linspace(0, 2 * np.pi, len(spoke_labels), endpoint=False).tolist()
+    ang_c = ang + ang[:1]
+
+    fig, ax = plt.subplots(figsize=(5.2, 5.2), subplot_kw={"polar": True})
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
+    ax.set_xticks(ang)
+    ax.set_xticklabels(spoke_labels, fontsize=9, color=NAVY)
+    ax.set_ylim(0, 100)
+    ax.set_yticks([25, 50, 75])
+    ax.set_yticklabels(["25", "50", "75"], fontsize=7, color="#9aa3b2")
+    for p, c, lab in zip(players, colors, labels):
+        pcts = percentiles_vs_baseline(p, baseline)
+        vals = [pcts[col] for col, _ in RADAR_METRICS]
+        vals_c = vals + vals[:1]
+        ax.plot(ang_c, vals_c, color=c, linewidth=2, label=lab)
+        ax.fill(ang_c, vals_c, color=c, alpha=0.12)
+    ax.spines["polar"].set_color("#d6dbe4")
+    ax.legend(loc="upper right", bbox_to_anchor=(1.28, 1.12), fontsize=8, frameon=False)
+    ax.set_title("Percentile vs Big Ten", color=NAVY, fontsize=11,
+                 fontweight="bold", pad=16)
+    fig.tight_layout()
+    return fig
+
+
 def _fig_to_b64(fig) -> str:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")

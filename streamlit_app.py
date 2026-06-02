@@ -20,10 +20,23 @@ import streamlit as st
 from illini_fit.config import DEFAULT_SEASON, NAVY, ORANGE, POSITION_GROUPS, TEAM_LABEL
 from illini_fit.fetch import get_players, get_teams
 from illini_fit.fit_score import DEFAULT_WEIGHTS, candidate_pool, score_pool
-from illini_fit.needs import CATEGORY_LABEL, STAT_CATEGORIES, detect_needs
+from illini_fit.needs import (
+    CATEGORY_LABEL,
+    STAT_CATEGORIES,
+    TARGET_ROTATION,
+    detect_needs,
+)
+from illini_fit.precedent import (
+    band_sentence,
+    precedent_band,
+    precedents,
+    up_transfer_cohort,
+)
 from illini_fit.profile import (
+    ROTATION_MIN_PCT,
     default_departures,
     get_roster,
+    returning_core,
     roster_identity,
     team_profile,
 )
@@ -32,9 +45,11 @@ from illini_fit.scouting import (
     build_projection,
     card_html,
     card_to_pdf,
+    compare_radar,
     radar_figure,
 )
 from illini_fit.similarity import build_reference, comps as style_comps, replacements_for
+from illini_fit.trajectory import attach_trajectory, player_trajectories, trajectory_line
 from illini_fit.translation import calibrate
 
 st.set_page_config(page_title="Illini Portal Fit Engine", page_icon="🟧", layout="wide")
@@ -58,6 +73,16 @@ def load_reference(season: int, _nonce: int = 0):
     players, _ = load_data(season, _nonce)
     mu, sigma = build_reference(players)
     return mu, sigma
+
+
+@st.cache_data(show_spinner="Computing multi-year trajectories…")
+def load_trajectories(season: int, _nonce: int = 0):
+    return player_trajectories(season)
+
+
+@st.cache_data(show_spinner="Assembling historical transfer precedents…")
+def load_cohort(season: int, _nonce: int = 0):
+    return up_transfer_cohort(illinois_season=season)
 
 
 # --------------------------------------------------------------------------- #
@@ -116,8 +141,9 @@ tp = team_profile(teams)
 roster = get_roster(players)
 ident = roster_identity(roster)
 
-tab_needs, tab_board, tab_detail = st.tabs(
-    ["🟧 Program & Needs", "📋 Target Board", "🔍 Player Detail"]
+tab_needs, tab_board, tab_depth, tab_compare, tab_detail = st.tabs(
+    ["🟧 Program & Needs", "📋 Target Board", "🧱 Depth Chart",
+     "⚔️ Compare", "🔍 Player Detail"]
 )
 
 with tab_needs:
@@ -206,9 +232,11 @@ if conf_sel:
 pool = pool.reset_index(drop=True)
 
 model = load_model(season, st.session_state.nonce)
+traj = load_trajectories(season, st.session_state.nonce)
 board = score_pool(pool, needs, weights) if len(pool) else pool
 if len(board):
-    board = model.project(board)  # adds raw_/proj_ box line, retention, level_jump
+    board = model.project(board)        # raw_/proj_ box line, retention, level_jump
+    board = attach_trajectory(board, traj)  # d_bpm, traj_index, traj_label, *_prev
 
 with tab_board:
     if not len(board):
@@ -228,7 +256,7 @@ with tab_board:
             show[["rank", "player", "team", "conf", "role", "yr", "fit_score",
                   "production", "role_fit", "system_fit", "attainability",
                   "raw_pts_pg", "proj_pts_pg", "retention", "level_jump",
-                  "attain_label", "rationale"]],
+                  "d_bpm", "traj_label", "attain_label", "rationale"]],
             width="stretch", hide_index=True,
             column_config={
                 "fit_score": st.column_config.ProgressColumn(
@@ -241,12 +269,129 @@ with tab_board:
                 "proj_pts_pg": st.column_config.NumberColumn("Proj pts", format="%.1f"),
                 "retention": st.column_config.NumberColumn("Keep%", format="%.0f"),
                 "level_jump": st.column_config.TextColumn("Level jump"),
+                "d_bpm": st.column_config.NumberColumn("ΔBPM", format="%+.1f",
+                    help="Year-over-year BPM change vs last season (rotation players)"),
+                "traj_label": st.column_config.TextColumn("Trend"),
                 "rationale": st.column_config.TextColumn("Scouting note", width="large"),
             },
         )
         st.download_button("⬇️ Download board (CSV)",
                            board.to_csv(index=False).encode(),
                            file_name=f"illini_targets_{season}.csv", mime="text/csv")
+
+        # ---- Risers: who in this pool is on the way up -------------------
+        risers = board[board["traj_label"].isin(["Breakout", "Ascending"])]
+        risers = risers.sort_values("traj_index", ascending=False)
+        st.markdown("#### 📈 Biggest risers in the pool")
+        if len(risers):
+            st.caption("Candidates whose game took a real year-over-year leap "
+                       "(rotation role both seasons) — value a single-season "
+                       "snapshot understates. **Breakout** = bigger role *and* "
+                       "held efficiency, still underclass-eligible.")
+            st.dataframe(
+                risers.head(15)[["player", "team", "conf", "role", "yr",
+                                 "bpm_prev", "bpm", "d_bpm", "d_usg", "d_ts",
+                                 "traj_label", "fit_score"]],
+                width="stretch", hide_index=True,
+                column_config={
+                    "bpm_prev": st.column_config.NumberColumn("BPM last yr", format="%.1f"),
+                    "bpm": st.column_config.NumberColumn("BPM now", format="%.1f"),
+                    "d_bpm": st.column_config.NumberColumn("ΔBPM", format="%+.1f"),
+                    "d_usg": st.column_config.NumberColumn("ΔUsg", format="%+.1f"),
+                    "d_ts": st.column_config.NumberColumn("ΔTS%", format="%+.1f"),
+                    "traj_label": st.column_config.TextColumn("Trend"),
+                    "fit_score": st.column_config.NumberColumn("Fit", format="%.1f"),
+                },
+            )
+        else:
+            st.caption("No prior-season data available to compute risers for "
+                       "this season (need the previous year's snapshot).")
+
+# --------------------------------------------------------------------------- #
+# Depth chart — project the post-portal roster and slot targets into holes
+# --------------------------------------------------------------------------- #
+with tab_depth:
+    st.subheader("Projected post-portal depth chart")
+    st.caption(f"Assumes the **{len(departures)}** player(s) marked leaving on the "
+               f"Program & Needs tab are gone. Target rotation: "
+               f"{TARGET_ROTATION['Guard']} guards · {TARGET_ROTATION['Wing']} wings "
+               f"· {TARGET_ROTATION['Big']} bigs. Slot board targets into the holes.")
+    ret = returning_core(roster, departures)
+    gcols = st.columns(3)
+    open_by, picks_by = {}, {}
+    for i, g in enumerate(POSITION_GROUPS):
+        with gcols[i]:
+            grp = ret[ret["group"] == g].sort_values("min_pct", ascending=False)
+            rot = grp[grp["min_pct"] >= ROTATION_MIN_PCT]
+            open_slots = max(0, TARGET_ROTATION[g] - len(rot))
+            open_by[g] = open_slots
+            head = (f"**{g}** · {len(rot)}/{TARGET_ROTATION[g]} rotation "
+                    + ("✅ set" if open_slots == 0 else f"🟧 {open_slots} open"))
+            st.markdown(head)
+            if len(grp):
+                for _, p in grp.iterrows():
+                    tag = "🟧" if p["min_pct"] >= ROTATION_MIN_PCT else "•"
+                    st.write(f"{tag} {p['player']} · {p['yr']} · {p['min_pct']:.0f}% min")
+            else:
+                st.write("— no returners")
+            opts = board[board["group"] == g]["player"].head(40).tolist() if len(board) else []
+            picks = st.multiselect(f"Add {g} target(s)", opts, key=f"slot_{g}")
+            picks_by[g] = picks
+            for name in picks:
+                pr = board[board["player"] == name].iloc[0]
+                st.success(f"➕ {name} · {pr['team']} · Fit {pr['fit_score']:.0f} "
+                           f"· proj {pr['proj_pts_pg']:.1f} pts")
+    total_open = sum(open_by.values())
+    filled = sum(len(v) for v in picks_by.values())
+    st.divider()
+    mcol = st.columns(3)
+    mcol[0].metric("Open rotation spots", total_open)
+    mcol[1].metric("Targets slotted", filled)
+    mcol[2].metric("Holes remaining", max(0, total_open - filled),
+                   delta=None if total_open == filled else f"-{max(0, total_open - filled)}")
+
+# --------------------------------------------------------------------------- #
+# Compare — head-to-head on radar shape, fit components, projected production
+# --------------------------------------------------------------------------- #
+with tab_compare:
+    st.subheader("Head-to-head target comparison")
+    st.caption("Pick 2–3 players to compare percentile shape (vs the Big Ten), "
+               "Fit components, and Big Ten-projected production side by side.")
+    if not len(board):
+        st.info("Adjust filters to populate the board, then compare players here.")
+    else:
+        cmp_picks = st.multiselect("Players", board["player"].tolist(),
+                                   max_selections=3, key="cmp_picks")
+        if len(cmp_picks) < 2:
+            st.info("Select at least two players to compare.")
+        else:
+            rows = [board[board["player"] == p].iloc[0] for p in cmp_picks]
+            base_cmp = bigten_baseline(players)
+            cc1, cc2 = st.columns([1.1, 1])
+            with cc1:
+                st.pyplot(compare_radar(rows, base_cmp, labels=cmp_picks))
+            with cc2:
+                idx = ["Fit Score", "Production", "Role fit", "System fit",
+                       "Attainability", "Class", "Height", "Pts/g (raw)",
+                       "Proj pts", "Keep%", "3PM/g", "3P%", "AST%", "Stl%",
+                       "Blk%", "BPM"]
+
+                def _col(r):
+                    return [f"{r['fit_score']:.1f}", f"{r['production']:.0f}",
+                            f"{r['role_fit']:.0f}", f"{r['system_fit']:.0f}",
+                            f"{r['attainability']:.0f}", str(r["yr"]), str(r["height"]),
+                            f"{r['pts_pg']:.1f}", f"{r['proj_pts_pg']:.1f}",
+                            f"{r['retention']:.0f}%",
+                            f"{r['three_pm'] / max(r['gp'], 1):.1f}",
+                            f"{r['three_pct']:.0%}", f"{r['ast_pct']:.0f}",
+                            f"{r['stl_pct']:.1f}", f"{r['blk_pct']:.1f}",
+                            f"{r['bpm']:.1f}"]
+
+                table = pd.DataFrame({p: _col(r) for p, r in zip(cmp_picks, rows)},
+                                     index=idx)
+                st.dataframe(table, width="stretch")
+            for p, r in zip(cmp_picks, rows):
+                st.markdown(f"**{p}** — {r['rationale']}")
 
 with tab_detail:
     if not len(board):
@@ -281,6 +426,46 @@ with tab_detail:
                       f"{r['ast_pct']:.0f}", f"{r['to_pct']:.0f}", f"{r['blk_pct']:.1f}",
                       f"{r['stl_pct']:.1f}", f"{r['ts']:.1f}%", f"{r['pts_pg']:.1f}"],
         }), width="stretch", hide_index=True)
+
+        # ---- Development trajectory (multi-year, via stable pid) ----------
+        tline = trajectory_line(r)
+        if tline is not None:
+            st.divider()
+            st.markdown(f"#### 📈 Development trajectory · **{r['traj_label']}**")
+            prev_team = r.get("team_prev")
+            move = (f"{prev_team} → {r['team']}"
+                    if pd.notna(prev_team) and prev_team != r["team"]
+                    else "same program, year over year")
+            st.caption(f"How his game moved last season → this season ({move}).")
+            st.dataframe(tline, width="stretch", hide_index=True,
+                         column_config={"Δ": st.column_config.NumberColumn(
+                             "Δ", format="%+.1f")})
+
+        # ---- Comparable past transfers (real, outcome-backed precedent) ----
+        cohort = load_cohort(season, st.session_state.nonce)
+        mu_p, sigma_p = load_reference(season, st.session_state.nonce)
+        prec = precedents(r, cohort, mu_p, sigma_p, model.illinois_barthag, n=6)
+        if len(prec):
+            band = precedent_band(prec, r["pts_pg"])
+            st.divider()
+            st.markdown("#### 📜 Comparable past transfers — what actually happened")
+            st.caption("Real players who started from a similar profile and made a "
+                       "similar-size level jump. Their realized outcomes are the "
+                       "empirical band behind this target's projection.")
+            st.success(band_sentence(band))
+            st.dataframe(
+                prec.rename(columns={"from": "From", "to": "To",
+                                     "from_conf": "From conf", "to_conf": "To conf",
+                                     "from_pts": "Pts before", "to_pts": "Pts after",
+                                     "kept_pct": "Kept%", "match": "Match"}),
+                width="stretch", hide_index=True,
+                column_config={
+                    "gap": st.column_config.NumberColumn("Jump", format="%.2f",
+                        help="Barthag distance jumped (bigger = larger level-up)"),
+                    "Kept%": st.column_config.NumberColumn("Kept%", format="%.0f"),
+                    "Match": st.column_config.ProgressColumn(
+                        "Match", min_value=0, max_value=100, format="%.0f"),
+                })
 
         # ---- Scouting card: radar + translation + comps + printable PDF ----
         st.divider()

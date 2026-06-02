@@ -148,25 +148,75 @@ the **raw → Big Ten projected** box line, a **shot diet** (rim / mid / three s
 accuracy), and the player's **comps** — exportable to a **self-contained 1-page PDF** the staff
 can print for the board.
 
-## 5. How I built it
+## 5. Four more tools: from a ranked list to a war room
+
+The three tools above make the board *readable*; these four make it *decisive* — they answer
+the follow-up questions a staff asks the moment a name rises to the top. The first two also
+turn the model's honest limitations into strengths, and all four reuse the same public,
+cross-season BartTorvik data (the same player matched across seasons by stable `pid`).
+
+### 5a. Outcome-backed projections — real precedent behind every number
+
+A projection a staff can't trace is a projection a staff won't trust. So for any target the
+engine pulls the **real historical transfers** who started from the most similar profile and
+made the most similar-size level jump — matched in the same z-scored style space, penalised for
+a mismatch in jump size — and reports **what actually happened to their scoring** the next
+season. A 21.7-ppg ASun scorer jumping to Illinois surfaces names like Frankie Fidler
+(20.1 → 7.0), Chaz Lanier (19.6 → 18.0), and — fittingly — Ben Humrichous (14.8 → 7.6),
+yielding a **band**: *"6 comparable real transfers kept 38–62% of their scoring, median 46% →
+~8–14 pts at our level."* That replaces a single deflated number with an empirical distribution
+drawn from the same 600+ up-transfers, so the staff sees the *range of outcomes*, not false
+precision — the named precedent makes the translation defensible in a room.
+
+### 5b. Development trajectories — who is rising, not just who was good
+
+A single season underrates an ascending player and overrates a one-year spike. By tracking the
+**same player across seasons** (stable `pid`), the engine measures each returning rotation
+player's year-over-year move in BPM, usage, efficiency, scoring, and minutes, and labels him
+**Breakout** (a bigger role that *held* efficiency, still underclass-eligible), **Ascending**,
+**Steady**, or **Declining**. To keep it honest the trajectory only uses players who held a real
+rotation role in *both* seasons — a +20 BPM "jump" off a 5-minute freshman year is noise, not
+growth. The board carries a ΔBPM column and a dedicated **risers** view, and Player Detail shows
+the full last-year → this-year line — so a sophomore who jumped from −0.8 to +4.0 BPM at a
+high-major reads as the breakout he is, not as an average-looking single-season line.
+
+### 5c. Head-to-head comparison — three targets, one screen
+
+When two or three names cluster at the top, the staff compares them directly: overlaid
+percentile radars (vs the Big Ten), every Fit component, the Big-Ten-projected box line, and
+shooting/defense rates side by side, each with its one-line scouting note. The decision a coach
+actually makes — *which of these wings?* — gets its own screen instead of a mental juggle across
+rows.
+
+### 5d. Post-portal depth chart — tie every target to a roster hole
+
+Finally, the engine projects the roster **after** the marked departures into a Guard / Wing /
+Big depth chart against a target rotation (4 / 2 / 3), shows exactly how many spots are open at
+each position, and lets the staff **slot board targets into the holes** and watch the rotation
+fill in. It closes the loop from "good player" back to "fills *our* November rotation."
+
+## 6. How I built it
 
 - **Language:** Python 3.
 - **Data / model:** `pandas`, `numpy` — a small, readable package (`illini_fit/`) split into
   `schema` (validated column map), `fetch` (cache + live refresh), `profile` (team + roster),
   `needs` (departure-driven gap detection), `fit_score` (the scoring model), `translation`
-  (the Big Ten retention model), `similarity` (the style-comp engine), and `scouting` (radar +
-  PDF cards).
-- **App:** `streamlit` — an interactive, Illini-themed web app (filters, weight sliders,
-  ranked board with projected lines, player detail, scouting cards, CSV + PDF export);
-  `matplotlib` for the radar and `xhtml2pdf` for the printable card.
+  (the Big Ten retention model), `similarity` (the style-comp engine), `precedent`
+  (outcome-backed comparable transfers), `trajectory` (multi-year development), and `scouting`
+  (radar + PDF cards).
+- **App:** `streamlit` — an interactive, Illini-themed web app: filters, weight sliders, a
+  ranked board with projected lines and a risers view, a post-portal depth chart, a head-to-head
+  compare screen, player detail with development trajectory + real precedents + scouting card,
+  and CSV + PDF export; `matplotlib` for the radars and `xhtml2pdf` for the printable card.
 - **Quality:** every module ships with self-checks run as `python -m illini_fit.<module>` —
   data row-count/Illinois-parse assertions; a test that a shooting-weighted board surfaces
   more shooters and scores stay in 0-100; that scoring deflates and efficiency holds in the
-  translation model; that a player is his own closest comp. The app is verified headlessly
-  with Streamlit's `AppTest`.
+  translation model; that a player is his own closest comp; that the precedent cohort is large
+  and its kept-% band is ordered; that a big BPM jump reads as a riser. The app is verified
+  headlessly with Streamlit's `AppTest`, including the compare and depth-chart interactions.
 - **Deploy:** GitHub + Streamlit Community Cloud (one-click, free) for a shareable live link.
 
-## 6. Why it's useful to a GM / coaching staff
+## 7. Why it's useful to a GM / coaching staff
 
 - **It starts the portal window with a shortlist, not a spreadsheet.** Day one of the portal,
   the staff has a ranked, position-aware board instead of 1,500 names.
@@ -179,12 +229,18 @@ can print for the board.
 - **It encodes Illinois's identity from data.** Because system fit is derived from Illinois's
   actual profile (elite half-court offense, slow tempo, shooting), it won't recommend a
   player who is good in the abstract but wrong for how Illinois plays.
-- **It translates production to *our* level.** The Big Ten projection (calibrated on 990 real
-  transfers) stops a 25-ppg low-major name from masquerading as a 25-ppg Big Ten name — the
-  single most common mistake in reading raw portal stats.
-- **It speaks the staff's language.** "Plays like" comps frame an unknown name in terms of
-  players the room already knows, and the 1-page PDF card is something a coach can actually
-  print and carry.
+- **It translates production to *our* level — and shows the receipts.** The Big Ten projection
+  stops a 25-ppg low-major name from masquerading as a 25-ppg Big Ten name, and the precedent
+  engine backs every projection with *real named transfers* who made the same jump and a band of
+  what they actually kept — the single most common mistake in reading raw portal stats, with the
+  evidence attached.
+- **It finds risers, not just last year's stars.** Multi-year trajectories flag the ascending
+  sophomore the box score underrates and fade the one-year spike — exactly the edge a
+  development program like Illinois wants.
+- **It speaks the staff's language and closes the loop.** "Plays like" comps frame an unknown
+  name in terms of players the room already knows; the compare screen settles *which of these
+  three wings*; the depth chart drops a target into an open rotation spot; and the 1-page PDF
+  card is something a coach can actually print and carry.
 - **It's tunable on the fly.** A coach who wants to prioritize a defensive guard over a
   scoring one just moves a slider; the board updates in real time.
 
@@ -193,18 +249,19 @@ which is not a clean public feed): the engine ranks the full pool by fit, and th
 filters to who's actually available. That mirrors how an analytics staffer already works —
 this just does the heavy ranking in seconds.
 
-## 7. Honest limitations & next steps
+## 8. Honest limitations & next steps
 
 - **Portal availability isn't a clean public dataset**, so the engine ranks the full pool and
   is meant to be filtered to the live portal list. A natural v2 is to ingest a portal feed and
   auto-filter.
-- **One season of box-score data** underrates injured/young players and can overrate
-  high-usage players on bad teams; attainability, minutes filters, and the Big Ten translation
-  mitigate this but don't eliminate it. Multi-year trends and play-type data (Synergy/Hudl, if
-  licensed) would sharpen it.
-- **The translation model is a population average.** It captures how the typical player's box
-  line deflates with the level jump; an individual can beat or miss it, which is why the card
-  surfaces a *level-jump risk* label rather than a false-precision single number.
+- **The Fit Score still reads one season**, even though the development trajectories now add
+  multi-year context alongside it; a candidate with no prior D-I season (true freshmen, some
+  internationals) has no trajectory, and play-type data (Synergy/Hudl, if licensed) would
+  sharpen role fit further.
+- **The translation model is a population average** — which is exactly why the precedent engine
+  now sits next to it: rather than trusting a single deflated number, the staff sees the *band*
+  of what real comparable transfers actually kept. An individual can still beat or miss his
+  comps, so the engine surfaces the range and a level-jump risk label, not false precision.
 - **Fit weights are a reasonable default, not gospel** — which is exactly why they're exposed
   as sliders for the staff to own.
 - **No NIL/cost modeling.** A real GM board would layer in budget; that data isn't public.

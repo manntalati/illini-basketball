@@ -24,15 +24,24 @@ Score** so the staff can walk into the portal window with a shortlist instead of
 4. **Lets the staff drive** — tune weights, edit departures, re-weight needs, filter by
    conference/position/class, and export the board to CSV — all live.
 
-### Beyond the score — three scouting tools
+### Beyond the score — a full scouting suite
 
 - **Big Ten Translation** — projects every candidate's raw box line to *Illinois's level*,
   calibrated on **990 real cross-season transfers** (matched by stable player id). Learns from
   data that *efficiency and made-shooting travel but raw volume deflates* — so a 21-ppg SWAC
   scorer shows as ~6.5 ppg in the Big Ten, with a **Keep%** and a level-jump risk label.
+- **Outcome-backed precedents** — for any target, the **real historical transfers** who started
+  from a similar profile and made a similar-size level jump, with *what actually happened to
+  their scoring* and an empirical **kept-% band** — the named evidence behind the projection.
+- **Development trajectories** — tracks the **same player across seasons** to flag genuine
+  **risers** and **breakouts** (a bigger role that held efficiency) the single-season line hides.
 - **Player comps** — z-scored style vectors + nearest-neighbour search: turn a departing Illini
   into a ranked list of transfer-eligible look-alikes, and tag every target with its closest
   high-major comps.
+- **Head-to-head compare** — overlay 2–3 targets' percentile radars, Fit components, and
+  projected lines on one screen to settle *which* of the top names to chase.
+- **Post-portal depth chart** — project the roster after departures, see the open Guard / Wing /
+  Big spots, and **slot board targets into the holes**.
 - **Visual scouting cards** — a percentile **radar vs the Big Ten**, the raw→projected line, a
   shot diet, and comps, exportable to a **printable 1-page PDF** per target.
 
@@ -54,6 +63,8 @@ The app loads instantly from the committed data snapshot in `data/raw/`. Click
 python -m illini_fit.fetch        # download + validate data (asserts Illinois parses)
 python -m illini_fit.fit_score    # print the default Illinois board + run sanity checks
 python -m illini_fit.translation  # calibrate the Big Ten retention model on real transfers
+python -m illini_fit.precedent    # real comparable transfers + kept-% band for a target
+python -m illini_fit.trajectory   # multi-year risers / breakouts across Division I
 python -m illini_fit.similarity   # style replacements for a departing Illini + target comps
 python -m illini_fit.scouting     # write a sample 1-page scouting-card PDF to report/
 ```
@@ -82,6 +93,8 @@ illini-portal-fit/
 │   ├── needs.py              # departure-driven roster-need detection
 │   ├── fit_score.py          # the Fit Score model (+ self-tests)
 │   ├── translation.py        # Big Ten retention model (calibrated on real transfers)
+│   ├── precedent.py          # outcome-backed comparable past transfers (kept-% band)
+│   ├── trajectory.py         # multi-year development / riser + breakout detection
 │   ├── similarity.py         # style-comp / nearest-neighbour engine
 │   └── scouting.py           # percentile radar + printable PDF scouting cards
 ├── data/raw/                 # committed BartTorvik snapshot (reproducible runs)
