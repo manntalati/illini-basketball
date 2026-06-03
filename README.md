@@ -6,10 +6,6 @@ Built for the Illinois Men's Basketball Analytics Internship. It profiles Illino
 detects what's leaving, and ranks every eligible Division I player by a transparent **Fit
 Score** so the staff can walk into the portal window with a shortlist instead of a blank page.
 
-- **Live app:** _add your Streamlit Community Cloud URL here_
-- **Write-up:** [`report/writeup.md`](report/writeup.md)
-- **Data:** 100% public, from [BartTorvik](https://barttorvik.com)
-
 ---
 
 ## What it does
@@ -116,13 +112,6 @@ illini-portal-fit/
 I reverse-engineered the column layout of the headerless player feed and validated it
 (shooting splits reconcile; `BPM == OBPM + DBPM` and `TRB == ORB + DRB` hold for 100% of
 rows). Unverified columns go unused.
-
-## Deploy a live link (Streamlit Community Cloud, free)
-
-1. Push this repo to GitHub (public).
-2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**.
-3. Pick the repo, branch `main`, main file `streamlit_app.py`.
-4. Deploy. Paste the resulting URL into the **Live app** field above.
 
 ## Notes & limitations
 
