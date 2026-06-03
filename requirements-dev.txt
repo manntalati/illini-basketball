@@ -1,0 +1,14 @@
+# Optional extras for local development. NOT required to run the Streamlit app,
+# and deliberately kept out of requirements.txt so the deployed app installs
+# cleanly. Without these the app still works: the scouting card downloads as
+# self-contained HTML (print to PDF from any browser) instead of a PDF.
+#
+# Note: on some platforms xhtml2pdf pulls in pycairo, which needs system cairo
+# and pkg-config to build (e.g. `brew install cairo pkg-config` on macOS). That
+# build fails on hosts without those system libs, which is exactly why this is
+# not in the app's runtime requirements.
+#
+#   xhtml2pdf  native PDF export of scouting cards (illini_fit/scouting.py)
+#   markdown   renders the write-up in report/build_writeup.py
+xhtml2pdf>=0.2.11
+markdown>=3.4

@@ -507,10 +507,11 @@ with tab_detail:
                 file_name=f"{safe_name}_scouting_card.pdf",
                 mime="application/pdf")
         except Exception:
-            # Some environments lack a working reportlab raster backend
-            # (e.g. a python.org build whose reportlab pulls in libcairo).
-            # Fall back to a self-contained HTML card the staff can open
-            # in any browser and print to PDF, so the app never crashes.
+            # PDF export needs xhtml2pdf, which is a dev-only extra kept out of
+            # the app's runtime requirements (its pycairo dependency can't build
+            # without system cairo, e.g. on Streamlit Cloud). When it's missing
+            # we serve a self-contained HTML card instead, which prints to PDF
+            # from any browser, so the app never crashes.
             st.download_button(
                 "⬇️ Download 1-page scouting card (HTML)", card.encode("utf-8"),
                 file_name=f"{safe_name}_scouting_card.html",

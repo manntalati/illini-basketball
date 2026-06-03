@@ -57,6 +57,12 @@ streamlit run streamlit_app.py
 The app loads instantly from the committed data snapshot in `data/raw/`. Click
 **🔄 Refresh from BartTorvik** in the sidebar to pull fresh data.
 
+`requirements.txt` is everything the app needs to run, all pure-wheel installs.
+Native **PDF** export of scouting cards and rebuilding the write-up are optional;
+they live in `requirements-dev.txt` (`pip install -r requirements-dev.txt`).
+Without them the app still serves the same scouting card as printable HTML, so
+the live deploy never depends on a native PDF toolchain.
+
 ### Run the pipeline / tests without the UI
 
 ```bash
@@ -66,7 +72,7 @@ python -m illini_fit.translation  # calibrate the Big Ten retention model on rea
 python -m illini_fit.precedent    # real comparable transfers + kept-% band for a target
 python -m illini_fit.trajectory   # multi-year risers / breakouts across Division I
 python -m illini_fit.similarity   # style replacements for a departing Illini + target comps
-python -m illini_fit.scouting     # write a sample 1-page scouting-card PDF to report/
+python -m illini_fit.scouting     # write a sample 1-page scouting-card PDF (needs requirements-dev.txt)
 ```
 
 ## How the Fit Score is built
@@ -102,7 +108,8 @@ illini-portal-fit/
 │   ├── writeup.md                  # the project write-up
 │   ├── sample_board_2026.csv       # example board output
 │   └── sample_scouting_card.pdf    # example 1-page scouting card
-├── requirements.txt
+├── requirements.txt          # app runtime deps (what Streamlit Cloud installs)
+├── requirements-dev.txt      # optional extras: PDF export + write-up builder
 └── .streamlit/config.toml    # Illini orange/navy theme
 ```
 
