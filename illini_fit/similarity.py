@@ -1,17 +1,17 @@
-"""Player comp / similarity engine — "who plays like this guy?"
+"""Player comp / similarity engine: "who plays like this guy?"
 
 Two questions a staff asks constantly during portal season:
 
-  1. *Stylistic replacement* — a rotation piece is leaving; which available
+  1. *Stylistic replacement*: a rotation piece is leaving; which available
      transfers play the same role the same way?
-  2. *Comp* — we like this target; who does he remind us of (ideally a name we
+  2. *Comp*: we like this target; who does he remind us of (ideally a name we
      already know) so we can frame him quickly?
 
-Both reduce to nearest-neighbours in a normalised **style space**: each player
-is a vector of role/skill rates (usage, shot diet, playmaking, rebounding,
-defense, size, efficiency), z-scored against a Division-I rotation baseline so
-every axis is on the same scale. Distance is plain Euclidean — fully
-transparent, no learned weights — and reported as a 0-100 similarity.
+Both reduce to nearest-neighbors in a normalized style space: each player is a
+vector of role/skill rates (usage, shot diet, playmaking, rebounding, defense,
+size, efficiency), z-scored against a Division-I rotation baseline so every axis
+is on the same scale. Distance is plain Euclidean (transparent, no learned
+weights), reported as a 0-100 similarity.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 # Style axes. These describe HOW a player plays, not just how good he is, so the
-# nearest neighbour is a stylistic match rather than merely a similar-rated guy.
+# nearest neighbor is a stylistic match rather than merely a similar-rated guy.
 STYLE_FEATURES = [
     "usg",          # how much of the offense runs through him
     "three_rate",   # share of his shots from three (derived below)
@@ -35,7 +35,7 @@ STYLE_FEATURES = [
     "height_in",    # size
 ]
 
-# Distance at which two players are deemed "average-unrelated" — used to map a
+# Distance at which two players are deemed "average-unrelated"; used to map a
 # raw Euclidean distance onto a friendly 0-100 similarity. sqrt(2*k) is the
 # expected distance between two independent standard-normal k-vectors.
 _REF_DIST = float(np.sqrt(2 * len(STYLE_FEATURES)))

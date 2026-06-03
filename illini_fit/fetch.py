@@ -3,7 +3,7 @@
 Design goal: the app must work for a reviewer with zero setup. So we ship a
 committed snapshot under ``data/raw/`` and only hit the network when a snapshot
 is missing or an explicit refresh is requested. Either way the data is real
-BartTorvik data — nothing is synthetic.
+BartTorvik data; nothing is synthetic.
 """
 from __future__ import annotations
 

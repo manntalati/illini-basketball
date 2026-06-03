@@ -1,4 +1,4 @@
-"""Big Ten Translation model — what a player's box line becomes at Illinois's level.
+"""Big Ten Translation model: what a player's box line becomes at Illinois's level.
 
 Box-score counting stats (points, made threes, assists, rebounds) are *not*
 opponent-adjusted: a 20-and-8 line against low-major defenses does not survive
@@ -17,8 +17,8 @@ Calibration is fully data-driven and transparent:
     least-squares fit through that anchor across the whole transfer cohort, so
     every multiplier is an empirical estimate, not an assumption.
 
-Efficiency stats (TS%, usage) come out with a near-zero slope — proof that
-*efficiency travels* while *counting volume deflates* — exactly the scouting
+Efficiency stats (TS%, usage) come out with a near-zero slope, proof that
+efficiency travels while counting volume deflates. That's exactly the scouting
 lesson the tool exists to surface.
 """
 from __future__ import annotations

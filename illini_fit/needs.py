@@ -2,8 +2,8 @@
 
 Two kinds of need are produced, both in an easy-to-explain 0-1 scale:
 
-  * ``position_need`` — are we short bodies at Guard / Wing / Big in the rotation?
-  * ``stat_priority`` — what *share of last year's production* (threes, assists,
+  * ``position_need``: are we short bodies at Guard / Wing / Big in the rotation?
+  * ``stat_priority``: what *share of last year's production* (threes, assists,
     blocks, rebounds, steals, points) is walking out the door?
 
 Everything is derived from the data; the app lets staff override any weight or

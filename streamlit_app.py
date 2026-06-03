@@ -1,4 +1,4 @@
-"""Illini Portal Fit Engine — interactive transfer-portal target board.
+"""Illini Portal Fit Engine: interactive transfer-portal target board.
 
 Run locally:  streamlit run streamlit_app.py
 """
@@ -8,7 +8,7 @@ import os
 
 # Force matplotlib's headless raster backend BEFORE anything imports it, so the
 # server never tries to load a macOS GUI or cairo backend (which needs native
-# libcairo). We only rasterize PNGs for the scouting radar — Agg is sufficient.
+# libcairo). We only rasterize PNGs for the scouting radar, so Agg is enough.
 os.environ["MPLBACKEND"] = "Agg"
 
 import base64
@@ -102,7 +102,7 @@ st.markdown(
 )
 
 # --------------------------------------------------------------------------- #
-# Sidebar — data + filters + weights
+# Sidebar: data, filters, weights
 # --------------------------------------------------------------------------- #
 with st.sidebar:
     st.header("⚙️ Controls")
@@ -147,7 +147,7 @@ tab_needs, tab_board, tab_depth, tab_compare, tab_detail = st.tabs(
 )
 
 with tab_needs:
-    st.subheader(f"{tp['team']} — {tp['conf']} · {tp['record']}")
+    st.subheader(f"{tp['team']} · {tp['conf']} · {tp['record']}")
     c = st.columns(5)
     c[0].metric("Barthag", f"#{tp['barthag_rank']}", f"{tp['barthag']:.3f}")
     c[1].metric("Adj. Offense", f"#{tp['adj_oe_rank']}", f"{tp['adj_oe']:.1f}")
@@ -156,7 +156,7 @@ with tab_needs:
     c[4].metric("3PA share of FGA", f"{ident['three_pa_share']:.0%}",
                 f"{ident['made_threes_pg']:.1f} 3PM/g")
 
-    st.markdown("#### Roster — mark who is **leaving** (default: seniors graduate)")
+    st.markdown("#### Roster: mark who is **leaving** (default: seniors graduate)")
     departures = st.multiselect(
         "Departures",
         roster["player"].tolist(),
@@ -181,7 +181,7 @@ with tab_needs:
     sp_named = {CATEGORY_LABEL[k]: v for k, v in needs["stat_priority"].items()}
     nc[1].bar_chart(pd.Series(sp_named), color=ORANGE, horizontal=True)
 
-    with st.expander("✏️ Fine-tune needs (optional — overrides the auto-detected values)"):
+    with st.expander("✏️ Fine-tune needs (optional, overrides the auto-detected values)"):
         pn = {}
         st.caption("Positional need weights")
         pcols = st.columns(len(POSITION_GROUPS))
@@ -243,7 +243,7 @@ with tab_board:
         st.warning("No candidates match the current filters.")
     else:
         st.subheader(f"Top transfer targets for {tp['team']}  ·  {len(board)} in pool")
-        st.caption(f"Needs: **{needs['headline']}**  ·  weights — "
+        st.caption(f"Needs: **{needs['headline']}**  ·  weights: "
                    f"production {weights['production']:.0%}, role {weights['role']:.0%}, "
                    f"system {weights['system']:.0%}, attainability {weights['attainability']:.0%}")
         top_n = st.slider("Show top N", 10, 100, 25)
@@ -285,9 +285,9 @@ with tab_board:
         st.markdown("#### 📈 Biggest risers in the pool")
         if len(risers):
             st.caption("Candidates whose game took a real year-over-year leap "
-                       "(rotation role both seasons) — value a single-season "
-                       "snapshot understates. **Breakout** = bigger role *and* "
-                       "held efficiency, still underclass-eligible.")
+                       "(rotation role in both seasons) that a single-season "
+                       "snapshot understates. **Breakout** = a bigger role that "
+                       "*held* efficiency, still underclass-eligible.")
             st.dataframe(
                 risers.head(15)[["player", "team", "conf", "role", "yr",
                                  "bpm_prev", "bpm", "d_bpm", "d_usg", "d_ts",
@@ -308,7 +308,7 @@ with tab_board:
                        "this season (need the previous year's snapshot).")
 
 # --------------------------------------------------------------------------- #
-# Depth chart — project the post-portal roster and slot targets into holes
+# Depth chart: project the post-portal roster and slot targets into holes
 # --------------------------------------------------------------------------- #
 with tab_depth:
     st.subheader("Projected post-portal depth chart")
@@ -333,7 +333,7 @@ with tab_depth:
                     tag = "🟧" if p["min_pct"] >= ROTATION_MIN_PCT else "•"
                     st.write(f"{tag} {p['player']} · {p['yr']} · {p['min_pct']:.0f}% min")
             else:
-                st.write("— no returners")
+                st.write("No returners")
             opts = board[board["group"] == g]["player"].head(40).tolist() if len(board) else []
             picks = st.multiselect(f"Add {g} target(s)", opts, key=f"slot_{g}")
             picks_by[g] = picks
@@ -351,7 +351,7 @@ with tab_depth:
                    delta=None if total_open == filled else f"-{max(0, total_open - filled)}")
 
 # --------------------------------------------------------------------------- #
-# Compare — head-to-head on radar shape, fit components, projected production
+# Compare: head-to-head on radar shape, fit components, projected production
 # --------------------------------------------------------------------------- #
 with tab_compare:
     st.subheader("Head-to-head target comparison")
@@ -391,7 +391,7 @@ with tab_compare:
                                      index=idx)
                 st.dataframe(table, width="stretch")
             for p, r in zip(cmp_picks, rows):
-                st.markdown(f"**{p}** — {r['rationale']}")
+                st.markdown(f"**{p}**: {r['rationale']}")
 
 with tab_detail:
     if not len(board):
@@ -399,7 +399,7 @@ with tab_detail:
     else:
         pick = st.selectbox("Player", board["player"].tolist())
         r = board[board["player"] == pick].iloc[0]
-        st.subheader(f"{r['player']} — {r['role']} · {r['team']} ({r['conf']})")
+        st.subheader(f"{r['player']} · {r['role']} · {r['team']} ({r['conf']})")
         st.markdown(f"> {r['rationale']}")
         m = st.columns(5)
         m[0].metric("Fit Score", f"{r['fit_score']:.1f}")
@@ -416,7 +416,7 @@ with tab_detail:
             color=ORANGE, horizontal=True,
         )
         right.caption("Profile")
-        age_str = f"{r['age']:.1f}" if pd.notna(r.get("age")) else "—"
+        age_str = f"{r['age']:.1f}" if pd.notna(r.get("age")) else "n/a"
         right.dataframe(pd.DataFrame({
             "stat": ["Class", "Height", "Age", "Min%", "Usage", "BPM", "porpag",
                      "3PM/g", "3P%", "AST%", "TO%", "Blk%", "Stl%", "TS%", "Pts/g"],
@@ -448,7 +448,7 @@ with tab_detail:
         if len(prec):
             band = precedent_band(prec, r["pts_pg"])
             st.divider()
-            st.markdown("#### 📜 Comparable past transfers — what actually happened")
+            st.markdown("#### 📜 Comparable past transfers: what actually happened")
             st.caption("Real players who started from a similar profile and made a "
                        "similar-size level jump. Their realized outcomes are the "
                        "empirical band behind this target's projection.")
@@ -510,13 +510,13 @@ with tab_detail:
             # Some environments lack a working reportlab raster backend
             # (e.g. a python.org build whose reportlab pulls in libcairo).
             # Fall back to a self-contained HTML card the staff can open
-            # in any browser and print to PDF — the app never crashes.
+            # in any browser and print to PDF, so the app never crashes.
             st.download_button(
                 "⬇️ Download 1-page scouting card (HTML)", card.encode("utf-8"),
                 file_name=f"{safe_name}_scouting_card.html",
                 mime="text/html")
-            st.caption("PDF export is unavailable in this environment — "
-                       "open the HTML card in a browser and print to PDF.")
+            st.caption("PDF export isn't available in this environment. "
+                       "Open the HTML card in a browser and print to PDF.")
 
 st.caption("Data: BartTorvik (public). Fit Score is a transparent weighted blend of "
-           "production, positional fit, system fit, and attainability — all tunable above.")
+           "production, positional fit, system fit, and attainability, all tunable above.")

@@ -1,17 +1,17 @@
-"""Visual scouting cards — a one-page, printable read on any target.
+"""Visual scouting cards: a one-page, printable read on any target.
 
 A coach does not read a 60-column CSV; he reads a card. Each card answers, at a
 glance:
 
-  * **Shape** — a percentile radar vs the Big Ten rotation baseline, so every
-    spoke is "how would this skill rank in our league?"
-  * **Translation** — the raw box line next to its projection at Illinois's level
+  * Shape: a percentile radar vs the Big Ten rotation baseline, so every spoke
+    is "how would this skill rank in our league?"
+  * Translation: the raw box line next to its projection at Illinois's level
     (from :mod:`illini_fit.translation`), so gaudy low-major numbers are honest.
-  * **Shot diet** — where his shots come from (rim / mid / three) and how they fall.
-  * **Comps** — the players he most resembles (from :mod:`illini_fit.similarity`).
+  * Shot diet: where his shots come from (rim / mid / three) and how they fall.
+  * Comps: the players he most resembles (from :mod:`illini_fit.similarity`).
 
 The radar is matplotlib (shown in the app) and the whole card renders to a
-self-contained 1-page PDF via xhtml2pdf — coaches can print the board.
+self-contained one-page PDF via xhtml2pdf, so coaches can print the board.
 """
 from __future__ import annotations
 
@@ -30,8 +30,8 @@ import pandas as pd
 
 from .config import NAVY, ORANGE
 
-# (column, label) — radar spokes. Percentile is rank within the baseline, so the
-# differing column scales (rates vs per-game) do not matter.
+# (column, label) for the radar spokes. Percentile is rank within the baseline,
+# so the differing column scales (rates vs per-game) do not matter.
 RADAR_METRICS = [
     ("usg", "Usage"),
     ("pts_pg", "Scoring"),
@@ -107,7 +107,7 @@ def radar_figure(player: pd.Series, baseline: pd.DataFrame):
     ax.plot(ang_c, vals_c, color=ORANGE, linewidth=2)
     ax.fill(ang_c, vals_c, color=ORANGE, alpha=0.25)
     ax.spines["polar"].set_color("#d6dbe4")
-    ax.set_title(f"{player['player']} — percentile vs Big Ten",
+    ax.set_title(f"{player['player']}: percentile vs Big Ten",
                  color=NAVY, fontsize=11, fontweight="bold", pad=16)
     fig.tight_layout()
     return fig
@@ -158,7 +158,7 @@ def _fig_to_b64(fig) -> str:
 # HTML / PDF card
 # --------------------------------------------------------------------------- #
 def _fmt(v, spec="{:.1f}"):
-    return spec.format(v) if pd.notna(v) else "—"
+    return spec.format(v) if pd.notna(v) else "-"
 
 
 def card_html(player: pd.Series, baseline: pd.DataFrame, *,
@@ -218,18 +218,18 @@ def card_html(player: pd.Series, baseline: pd.DataFrame, *,
       <table>
         <tr><th>Zone</th><th style="text-align:right">Share</th><th style="text-align:right">FG%</th></tr>
         <tr><td>Rim</td><td style="text-align:right">{sp['rim_share']:.0%}</td>
-            <td style="text-align:right">{_fmt(sp['rim_pct']*100,'{:.0f}%') if pd.notna(sp['rim_pct']) else '—'}</td></tr>
+            <td style="text-align:right">{_fmt(sp['rim_pct']*100,'{:.0f}%') if pd.notna(sp['rim_pct']) else '-'}</td></tr>
         <tr><td>Mid</td><td style="text-align:right">{sp['mid_share']:.0%}</td>
-            <td style="text-align:right">{_fmt(sp['mid_pct']*100,'{:.0f}%') if pd.notna(sp['mid_pct']) else '—'}</td></tr>
+            <td style="text-align:right">{_fmt(sp['mid_pct']*100,'{:.0f}%') if pd.notna(sp['mid_pct']) else '-'}</td></tr>
         <tr><td>Three</td><td style="text-align:right">{sp['three_share']:.0%}</td>
-            <td style="text-align:right">{_fmt(sp['three_pct']*100,'{:.0f}%') if pd.notna(sp['three_pct']) else '—'}</td></tr>
+            <td style="text-align:right">{_fmt(sp['three_pct']*100,'{:.0f}%') if pd.notna(sp['three_pct']) else '-'}</td></tr>
       </table>
     </td>
   </tr></table>
 
   <h3>Plays like</h3>
   <table><tr><th>Comp</th><th>Team</th><th style="text-align:right">Similarity</th></tr>
-    {comp_rows or '<tr><td colspan="3">—</td></tr>'}</table>
+    {comp_rows or '<tr><td colspan="3">-</td></tr>'}</table>
 
   <p style="color:#9aa3b2;font-size:8pt;margin-top:14px">
     Illini Portal Fit Engine · data: BartTorvik (public) · radar = percentile vs Big Ten

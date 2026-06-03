@@ -8,42 +8,42 @@ Score** so the staff can walk into the portal window with a shortlist instead of
 
 - **Live app:** _add your Streamlit Community Cloud URL here_
 - **Write-up:** [`report/writeup.md`](report/writeup.md)
-- **Data:** 100% public — [BartTorvik](https://barttorvik.com)
+- **Data:** 100% public, from [BartTorvik](https://barttorvik.com)
 
 ---
 
 ## What it does
 
-1. **Reads Illinois's identity from data** — record, Barthag, adjusted offense/defense, tempo
+1. **Reads Illinois's identity from data**: record, Barthag, adjusted offense/defense, tempo
    (2025-26: 28-9, #6 Barthag, **#2 offense**, slow #289 tempo → an *elite half-court* team).
-2. **Detects roster needs** — assumes seniors graduate (editable), then measures the share of
+2. **Detects roster needs**: assumes seniors graduate (editable), then measures the share of
    last year's shooting / playmaking / defense / rebounding that's walking out the door.
 3. **Scores every eligible D-I player** on a 0-100 **Fit Score** = a weighted, fully visible
    blend of **Production + Role fit + System fit + Attainability**, each percentile-ranked
    within the realistic candidate pool.
-4. **Lets the staff drive** — tune weights, edit departures, re-weight needs, filter by
-   conference/position/class, and export the board to CSV — all live.
+4. **Lets the staff drive**: tune weights, edit departures, re-weight needs, filter by
+   conference/position/class, and export the board to CSV, all live.
 
-### Beyond the score — a full scouting suite
+### Beyond the score: a full scouting suite
 
-- **Big Ten Translation** — projects every candidate's raw box line to *Illinois's level*,
-  calibrated on **990 real cross-season transfers** (matched by stable player id). Learns from
-  data that *efficiency and made-shooting travel but raw volume deflates* — so a 21-ppg SWAC
-  scorer shows as ~6.5 ppg in the Big Ten, with a **Keep%** and a level-jump risk label.
-- **Outcome-backed precedents** — for any target, the **real historical transfers** who started
-  from a similar profile and made a similar-size level jump, with *what actually happened to
-  their scoring* and an empirical **kept-% band** — the named evidence behind the projection.
-- **Development trajectories** — tracks the **same player across seasons** to flag genuine
-  **risers** and **breakouts** (a bigger role that held efficiency) the single-season line hides.
-- **Player comps** — z-scored style vectors + nearest-neighbour search: turn a departing Illini
-  into a ranked list of transfer-eligible look-alikes, and tag every target with its closest
-  high-major comps.
-- **Head-to-head compare** — overlay 2–3 targets' percentile radars, Fit components, and
+- **Big Ten Translation:** projects every candidate's raw box line to *Illinois's level*,
+  calibrated on 990 real cross-season transfers (matched by stable player id). It learns from
+  data that efficiency and made-shooting travel while raw volume deflates, so a 21-ppg SWAC
+  scorer shows as ~6.5 ppg in the Big Ten, with a Keep% and a level-jump risk label.
+- **Outcome-backed precedents:** for any target, the real historical transfers who started
+  from a similar profile and made a similar-size level jump, with what actually happened to
+  their scoring and an empirical kept-% band. That's the named evidence behind the projection.
+- **Development trajectories:** tracks the same player across seasons to flag genuine risers
+  and breakouts (a bigger role that held efficiency) that a single-season line hides.
+- **Player comps:** z-scored style vectors plus nearest-neighbor search. Turn a departing
+  Illini into a ranked list of transfer-eligible look-alikes, and tag every target with its
+  closest high-major comps.
+- **Head-to-head compare:** overlay 2–3 targets' percentile radars, Fit components, and
   projected lines on one screen to settle *which* of the top names to chase.
-- **Post-portal depth chart** — project the roster after departures, see the open Guard / Wing /
-  Big spots, and **slot board targets into the holes**.
-- **Visual scouting cards** — a percentile **radar vs the Big Ten**, the raw→projected line, a
-  shot diet, and comps, exportable to a **printable 1-page PDF** per target.
+- **Post-portal depth chart:** project the roster after departures, see the open Guard / Wing /
+  Big spots, and slot board targets into the holes.
+- **Visual scouting cards:** a percentile radar vs the Big Ten, the raw→projected line, a
+  shot diet, and comps, exportable to a printable one-page PDF per target.
 
 ## Quickstart
 
@@ -73,7 +73,7 @@ python -m illini_fit.scouting     # write a sample 1-page scouting-card PDF to r
 
 | Component | Weight (default) | Measures |
 |---|---|---|
-| **Production** | 35% | BPM, porpag, minutes load — proven value |
+| **Production** | 35% | BPM, porpag, minutes load (proven value) |
 | **Role fit** | 20% | Does the player's position fill a *depleted* Illinois spot? |
 | **System fit** | 35% | Strengths matched to the *specific* skills Illinois must replace |
 | **Attainability** | 10% | Realism, from current team strength (`High-major proven` → `Low-major standout`) |
@@ -113,11 +113,11 @@ illini-portal-fit/
 | Player advanced stats | `https://barttorvik.com/getadvstats.php?year=YYYY&csv=1` |
 | Team ratings | `https://barttorvik.com/YYYY_team_results.json` |
 
-The column layout of the headerless player feed was reverse-engineered and **validated**
+I reverse-engineered the column layout of the headerless player feed and validated it
 (shooting splits reconcile; `BPM == OBPM + DBPM` and `TRB == ORB + DRB` hold for 100% of
-rows). Unverified columns are unused.
+rows). Unverified columns go unused.
 
-## Deploy a live link (Streamlit Community Cloud — free)
+## Deploy a live link (Streamlit Community Cloud, free)
 
 1. Push this repo to GitHub (public).
 2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**.
@@ -128,10 +128,8 @@ rows). Unverified columns are unused.
 
 Portal availability isn't a clean public feed, so the engine ranks the full eligible pool and
 is meant to be filtered to the live portal list. It uses one season of box-score data (no
-NIL/cost, no play-type data). Defaults are a sensible starting point — the sliders exist so
+NIL/cost, no play-type data). Defaults are a sensible starting point, and the sliders exist so
 the staff owns the final weighting. See [`report/writeup.md`](report/writeup.md) for the full
 discussion.
 
 ---
-
-*Independent analytics project · all data publicly sourced from BartTorvik.*

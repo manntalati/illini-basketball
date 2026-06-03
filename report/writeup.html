@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><meta charset="utf-8">
-<title>Illini Portal Fit Engine — Write-up</title><style>
+<title>Illini Portal Fit Engine: Write-up</title><style>
 @page { size: letter; margin: 2cm; }
 body { font-family: Helvetica, Arial, sans-serif; color: #1c2533;
         line-height: 1.5; font-size: 11pt; }
@@ -25,25 +25,24 @@ em { color: #4a5568; }
 <body><h1>Illini Portal Fit Engine</h1>
 <h3>A transfer-portal recruiting target board for Illinois Men's Basketball</h3>
 <p><strong>Author:</strong> Mannat Talati · <strong>Built for:</strong> Illinois Men's Basketball Analytics Internship
-<strong>Live app:</strong> <em>(Streamlit link — see README)</em> · <strong>Code:</strong> <em>(GitHub link — see README)</em></p>
+<strong>Live app:</strong> <em>(Streamlit link, see README)</em> · <strong>Code:</strong> <em>(GitHub link, see README)</em></p>
 <hr />
 <h2>1. The problem</h2>
 <p>Roster construction in college basketball now runs through the transfer portal. Every
 spring, 1,500+ Division I players enter, and a staff has a few weeks to decide who to
 pursue. Illinois under Brad Underwood has been one of the most aggressive portal and
-international programs in the country, so this is not a side project for the staff — it
-<em>is</em> the roster.</p>
-<p>The hard part is not finding <em>good</em> players; it is finding good players who <strong>(a)</strong> fill a
-<strong>specific hole</strong> the roster just opened, <strong>(b)</strong> fit how Illinois actually plays, and
-<strong>(c)</strong> are <strong>realistic</strong> to land. Doing that by eye across all of Division I is slow and
-biased toward the names you already know.</p>
-<p><strong>This tool turns that triage into a ranked, explainable board.</strong> It profiles Illinois's
-roster, detects what's leaving, and scores every eligible D-I player on a transparent
-<strong>Fit Score</strong> so the staff can start the portal window with a shortlist instead of a blank
-page.</p>
-<h2>2. The data — and how I sourced it</h2>
-<p>Everything is <strong>public BartTorvik data</strong>, pulled live over plain HTTP (no scraping tricks,
-no paywalled sources like KenPom):</p>
+international programs in the country, so this isn't a side project for the staff. It is the
+roster.</p>
+<p>The hard part isn't finding <em>good</em> players; it's finding good players who <strong>(a)</strong> fill a
+specific hole the roster just opened, <strong>(b)</strong> fit how Illinois actually plays, and <strong>(c)</strong>
+are realistic to land. Doing that by eye across all of Division I is slow, and it leans
+toward the names you already know.</p>
+<p>This tool turns that triage into a ranked, explainable board. It profiles Illinois's roster,
+detects what's leaving, and scores every eligible D-I player on a transparent <strong>Fit Score</strong>,
+so the staff can start the portal window with a shortlist instead of a blank page.</p>
+<h2>2. The data, and how I sourced it</h2>
+<p>Everything is public BartTorvik data, pulled live over plain HTTP. No scraping tricks, no
+paywalled sources like KenPom.</p>
 <table>
 <thead>
 <tr>
@@ -65,43 +64,43 @@ no paywalled sources like KenPom):</p>
 </tr>
 </tbody>
 </table>
-<p>The player feed ships with <strong>no header row</strong>, so I reverse-engineered the column layout and
-then <strong>validated it against the data itself</strong> before trusting a single number:</p>
+<p>The player feed ships with no header row, so I reverse-engineered the column layout and then
+checked it against the data itself before trusting a single number:</p>
 <ul>
 <li>shooting splits reconcile (FTM ÷ FTA = FT%, etc.),</li>
-<li><code>BPM == OBPM + DBPM</code> holds for <strong>100%</strong> of rows,</li>
-<li><code>total rebounds == offensive + defensive</code> per game holds for <strong>100%</strong> of rows.</li>
+<li><code>BPM == OBPM + DBPM</code> holds for 100% of rows,</li>
+<li><code>total rebounds == offensive + defensive</code> per game holds for 100% of rows.</li>
 </ul>
-<p>Columns I could not verify are named <code>extra_NN</code> and are <strong>deliberately unused</strong>, so every
-figure the tool reports is one I can explain on a whiteboard.</p>
+<p>Columns I couldn't verify are named <code>extra_NN</code> and go unused on purpose, so every figure the
+tool reports is one I can explain on a whiteboard.</p>
 <p>A real snapshot is committed to the repo, so the app loads instantly for a reviewer and the
-results are reproducible; a "Refresh from BartTorvik" button re-pulls live data on demand.</p>
+results are reproducible. A "Refresh from BartTorvik" button re-pulls live data on demand.</p>
 <h2>3. How the Fit Score works</h2>
-<p>For the current (2025-26) season, the engine reads Illinois as: **28-9, Barthag #6, the</p>
-<h1>2 offense in the country (adjOE 131.8), #20 defense, and — notably — the #289 tempo.**</h1>
-<p>That last number matters: Illinois is an <em>elite half-court</em> team, <strong>not</strong> a run-and-gun
-team, so the model rewards skill and shot-making over raw transition athleticism. The
-profile is <em>derived from data</em>, not assumed.</p>
-<p>It then assumes seniors graduate (editable in the app) — for 2025-26 that's lead guard
-<strong>Kylan Boswell</strong>, stretch big <strong>Ben Humrichous</strong>, and <strong>AJ Redd</strong> — and measures what
-walks out the door: a chunk of the team's <strong>playmaking, perimeter defense, and outside
-shooting</strong>.</p>
+<p>For the current (2025-26) season, the engine reads Illinois as: 28-9, Barthag #6, the #2
+offense in the country (adjOE 131.8), #20 defense, and, notably, the #289 tempo. That last
+number matters. Illinois is an <em>elite half-court</em> team, not a run-and-gun team, so the model
+rewards skill and shot-making over raw transition athleticism. The profile is derived from
+data, not assumed.</p>
+<p>It then assumes seniors graduate (editable in the app). For 2025-26 that's lead guard
+<strong>Kylan Boswell</strong>, stretch big <strong>Ben Humrichous</strong>, and <strong>AJ Redd</strong>. It measures what walks
+out the door with them: a chunk of the team's playmaking, perimeter defense, and outside
+shooting.</p>
 <p>Each eligible candidate (non-Illinois, has remaining eligibility, cleared minimum
-minutes/games) gets a <strong>0-100 Fit Score</strong>, a weighted blend of four parts that are each
-shown separately:</p>
+minutes/games) gets a <strong>0-100 Fit Score</strong>, a weighted blend of four parts that are each shown
+separately:</p>
 <ol>
-<li><strong>Production</strong> — proven value: BPM, porpag, minutes load.</li>
-<li><strong>Role fit</strong> — does their position fill a <em>depleted</em> Illinois spot (guard / wing / big)?</li>
-<li><strong>System fit</strong> — do their strengths match the <strong>specific</strong> skills Illinois must replace?
-   The weights here come straight from the departure analysis (e.g. "we lost 24% of our
-   made threes" → shooting is weighted up).</li>
-<li><strong>Attainability</strong> — a realism lens from the player's current team strength, surfaced as a
+<li><strong>Production</strong>: proven value from BPM, porpag, and minutes load.</li>
+<li><strong>Role fit</strong>: does their position fill a <em>depleted</em> Illinois spot (guard / wing / big)?</li>
+<li><strong>System fit</strong>: do their strengths match the specific skills Illinois must replace? The
+   weights here come straight from the departure analysis (lose 24% of your made threes and
+   shooting gets weighted up).</li>
+<li><strong>Attainability</strong>: a realism lens from the player's current team strength, shown as a
    plain label: <em>High-major proven</em>, <em>Mid-major riser</em>, <em>Low-major standout</em>.</li>
 </ol>
-<p>Every component is percentile-ranked <strong>within the candidate pool</strong>, so a score answers the
+<p>Every component is percentile-ranked within the candidate pool, so a score answers the
 question a coach actually asks: <em>"compared to the other realistic options, how good is
-this?"</em> All four weights, the departure list, and the need weights are <strong>tunable live</strong> in
-the app.</p>
+this?"</em> All four weights, the departure list, and the need weights are tunable live in the
+app.</p>
 <p><strong>Example output (default Illinois needs, 2025-26):</strong></p>
 <table>
 <thead>
@@ -119,41 +118,39 @@ the app.</p>
 <td>Jason Rivera-Torres</td>
 <td>Monmouth</td>
 <td>Wing F</td>
-<td>3.3% steal rate; 1.5 3PM/g; +5.5 BPM — perimeter D + shooting; mid-major riser</td>
+<td>3.3% steal rate; 1.5 3PM/g; +5.5 BPM, perimeter D + shooting; mid-major riser</td>
 </tr>
 <tr>
 <td>85.3</td>
 <td>Tyler Tanner</td>
 <td>Vanderbilt</td>
 <td>Scoring PG</td>
-<td>5.1 ast/g (29 AST%); +10.2 BPM — playmaking; high-major proven</td>
+<td>5.1 ast/g (29 AST%); +10.2 BPM, playmaking; high-major proven</td>
 </tr>
 <tr>
 <td>85.1</td>
 <td>Mason Falslev</td>
 <td>Utah St.</td>
 <td>Combo G</td>
-<td>3.6% steal rate; 3.1 ast/g; +8.8 BPM — perimeter D + playmaking</td>
+<td>3.6% steal rate; 3.1 ast/g; +8.8 BPM, perimeter D + playmaking</td>
 </tr>
 </tbody>
 </table>
 <p>Each row carries an auto-generated scouting note, and the <strong>Player Detail</strong> view breaks the
 score into its four bars next to the player's full statistical profile.</p>
 <h2>4. Three tools that make the board a scouting product</h2>
-<p>A ranked list is a start; a staff also needs to know <em>what the numbers mean at our level</em>,
-<em>who a player reminds us of</em>, and have something they can <strong>print and hand to a coach</strong>.
-Three additions do that — and the first two are calibrated on real history, not assumed.</p>
-<h3>4a. Big Ten Translation — what a box line becomes at Illinois's level</h3>
+<p>A ranked list is a start. A staff also needs to know what the numbers mean at our level, who
+a player reminds us of, and have something they can print and hand to a coach. Three
+additions do that, and the first two are calibrated on real history rather than assumed.</p>
+<h3>4a. Big Ten Translation: what a box line becomes at Illinois's level</h3>
 <p>A 20-and-8 against low-major defenses is not a 20-and-8 in the Big Ten, because box-score
-counting stats are <strong>not</strong> opponent-adjusted. To make gaudy lines honest, I learned the
-deflation from data: I matched the <strong>same player across consecutive seasons</strong> using
-BartTorvik's stable player id, found everyone who <strong>changed competition level</strong>, and measured
-how much of each stat survived the jump. The calibration set is <strong>990 real cross-season
-transfers</strong>.</p>
+counting stats aren't opponent-adjusted. To make gaudy lines honest, I learned the deflation
+from data: I matched the same player across consecutive seasons using BartTorvik's stable
+player id, found everyone who changed competition level, and measured how much of each stat
+survived the jump. The calibration set is 990 real cross-season transfers.</p>
 <p>For each stat I fit a one-parameter retention line, anchored so a zero-gap move means no
 change (<code>ratio = 1 + slope × level_gap</code>), where the gap is the Barthag distance between the
-player's team and Illinois (Barthag <strong>0.968</strong>). The result is exactly the scouting lesson
-you'd hope for:</p>
+player's team and Illinois (Barthag 0.968). The result is the scouting lesson you'd hope for:</p>
 <table>
 <thead>
 <tr>
@@ -195,89 +192,92 @@ you'd hope for:</p>
 </tr>
 </tbody>
 </table>
-<p>So <strong>efficiency travels and made-shooting travels; raw volume deflates</strong> — and the deflation
-scales with how big a leap the player is making. Concretely, a 21.4 ppg scorer in the SWAC
-projects to <strong>~6.5 ppg</strong> in the Big Ten ("major jump, high variance"), while a high-major
-star at BYU keeps ~93% of his scoring. The board shows each candidate's <strong>raw line next to its
-projection</strong>, a <strong>Keep%</strong>, and a <strong>level-jump risk label</strong> so a 25-ppg low-major name can't
-masquerade as a 25-ppg Big Ten name.</p>
+<p>So efficiency and made-shooting travel; raw volume deflates. And the deflation scales with
+how big a leap the player is making. A 21.4 ppg scorer in the SWAC projects to ~6.5 ppg in
+the Big Ten ("major jump, high variance"), while a high-major star at BYU keeps ~93% of his
+scoring. The board shows each candidate's raw line next to its projection, a <strong>Keep%</strong>, and a
+level-jump risk label, so a 25-ppg low-major name can't masquerade as a 25-ppg Big Ten name.</p>
 <blockquote>
 <p>Note on double-counting: the Fit Score's <em>production</em> component already uses
-opponent-<strong>adjusted</strong> inputs (BPM, adjusted ratings), so the translation model intentionally
-leaves the score alone and instead translates the <strong>raw box stats coaches read directly</strong> —
-keeping both numbers honest and separate.</p>
+opponent-<strong>adjusted</strong> inputs (BPM, adjusted ratings), so the translation model leaves the
+score alone and instead translates the raw box stats coaches read directly. That keeps the
+two numbers separate and both honest.</p>
 </blockquote>
-<h3>4b. Player comps — "who does he play like?"</h3>
-<p>During portal season a staff constantly asks two questions: <em>a starter just left — which
-available transfers replace his style?</em> and <em>we like this target — who does he remind us of?</em>
-Both are nearest-neighbour problems in a <strong>style space</strong>: each player becomes a vector of
+<h3>4b. Player comps: "who does he play like?"</h3>
+<p>During portal season a staff constantly asks two questions: <em>a starter just left, which
+available transfers replace his style?</em> and <em>we like this target, who does he remind us of?</em>
+Both are nearest-neighbor problems in a <em>style space</em>: each player becomes a vector of
 role/skill rates (usage, shot diet, playmaking, ball security, rebounding, rim protection,
-perimeter activity, size, efficiency), <strong>z-scored against the D-I rotation baseline</strong> so every
-axis is comparable. Distance is plain Euclidean — no learned weights — reported as a 0-100
+perimeter activity, size, efficiency), z-scored against the D-I rotation baseline so every
+axis is comparable. Distance is plain Euclidean, no learned weights, reported as a 0-100
 similarity. The <strong>Program &amp; Needs</strong> page turns a departing Illini into a ranked list of
-transfer-eligible look-alikes; every target carries its closest high-major comps.</p>
+transfer-eligible look-alikes, and every target carries its closest high-major comps.</p>
 <h3>4c. Visual scouting cards + printable PDF</h3>
-<p>Coaches read cards, not 60-column CSVs. Each target renders a one-page card: a <strong>percentile
-radar vs the Big Ten rotation</strong> (every spoke is "how would this skill rank in our league?"),
-the <strong>raw → Big Ten projected</strong> box line, a <strong>shot diet</strong> (rim / mid / three share and
-accuracy), and the player's <strong>comps</strong> — exportable to a <strong>self-contained 1-page PDF</strong> the staff
-can print for the board.</p>
-<h2>5. Four more tools: from a ranked list to a war room</h2>
-<p>The three tools above make the board <em>readable</em>; these four make it <em>decisive</em> — they answer
-the follow-up questions a staff asks the moment a name rises to the top. The first two also
-turn the model's honest limitations into strengths, and all four reuse the same public,
-cross-season BartTorvik data (the same player matched across seasons by stable <code>pid</code>).</p>
-<h3>5a. Outcome-backed projections — real precedent behind every number</h3>
-<p>A projection a staff can't trace is a projection a staff won't trust. So for any target the
-engine pulls the <strong>real historical transfers</strong> who started from the most similar profile and
-made the most similar-size level jump — matched in the same z-scored style space, penalised for
-a mismatch in jump size — and reports <strong>what actually happened to their scoring</strong> the next
-season. A 21.7-ppg ASun scorer jumping to Illinois surfaces names like Frankie Fidler
-(20.1 → 7.0), Chaz Lanier (19.6 → 18.0), and — fittingly — Ben Humrichous (14.8 → 7.6),
-yielding a <strong>band</strong>: <em>"6 comparable real transfers kept 38–62% of their scoring, median 46% →
-~8–14 pts at our level."</em> That replaces a single deflated number with an empirical distribution
-drawn from the same 600+ up-transfers, so the staff sees the <em>range of outcomes</em>, not false
-precision — the named precedent makes the translation defensible in a room.</p>
-<h3>5b. Development trajectories — who is rising, not just who was good</h3>
-<p>A single season underrates an ascending player and overrates a one-year spike. By tracking the
-<strong>same player across seasons</strong> (stable <code>pid</code>), the engine measures each returning rotation
+<p>Coaches read cards, not 60-column CSVs. Each target renders a one-page card: a percentile
+radar vs the Big Ten rotation (every spoke is "how would this skill rank in our league?"),
+the raw → Big Ten projected box line, a shot diet (rim / mid / three share and accuracy), and
+the player's comps. The whole card exports to a self-contained one-page PDF the staff can
+print for the board.</p>
+<h2>5. Four more tools for the actual decision</h2>
+<p>The three tools above make the board readable. These four help with the decision itself: they
+answer the follow-up questions a staff asks the moment a name rises to the top. The first two
+also turn the model's honest limitations into something useful, and all four reuse the same
+public, cross-season BartTorvik data (the same player matched across seasons by stable
+<code>pid</code>).</p>
+<h3>5a. Outcome-backed projections: real precedent behind every number</h3>
+<p>A projection a staff can't trace is a projection a staff won't trust. So for any target, the
+engine pulls the real historical transfers who started from the most similar profile and made
+a similar-size level jump (matched in the same z-scored style space, penalized when the jump
+sizes differ), then reports what actually happened to their scoring the next season. A
+21.7-ppg ASun scorer jumping to Illinois surfaces names like Frankie Fidler (20.1 → 7.0),
+Chaz Lanier (19.6 → 18.0), and, fittingly, Ben Humrichous (14.8 → 7.6). That yields a band:
+<em>"6 comparable real transfers kept 38–62% of their scoring, median 46% → ~8–14 pts at our
+level."</em> It replaces a single deflated number with an empirical distribution drawn from the
+same 600+ up-transfers, so the staff sees the range of outcomes instead of false precision.
+The named precedent is what makes the translation defensible in a room.</p>
+<h3>5b. Development trajectories: who is rising, not just who was good</h3>
+<p>A single season underrates an ascending player and overrates a one-year spike. By tracking
+the same player across seasons (stable <code>pid</code>), the engine measures each returning rotation
 player's year-over-year move in BPM, usage, efficiency, scoring, and minutes, and labels him
-<strong>Breakout</strong> (a bigger role that <em>held</em> efficiency, still underclass-eligible), <strong>Ascending</strong>,
-<strong>Steady</strong>, or <strong>Declining</strong>. To keep it honest the trajectory only uses players who held a real
-rotation role in <em>both</em> seasons — a +20 BPM "jump" off a 5-minute freshman year is noise, not
-growth. The board carries a ΔBPM column and a dedicated <strong>risers</strong> view, and Player Detail shows
-the full last-year → this-year line — so a sophomore who jumped from −0.8 to +4.0 BPM at a
-high-major reads as the breakout he is, not as an average-looking single-season line.</p>
-<h3>5c. Head-to-head comparison — three targets, one screen</h3>
+<em>Breakout</em> (a bigger role that <em>held</em> efficiency, still underclass-eligible), <em>Ascending</em>,
+<em>Steady</em>, or <em>Declining</em>. To keep it honest, the trajectory only counts players who held a
+real rotation role in <em>both</em> seasons. A +20 BPM "jump" off a five-minute freshman year is
+noise, not growth. The board carries a ΔBPM column and a dedicated <strong>risers</strong> view, and
+Player Detail shows the full last-year → this-year line. A sophomore who jumped from −0.8 to
++4.0 BPM at a high-major reads as the breakout he is, not as an average-looking single-season
+line.</p>
+<h3>5c. Head-to-head comparison: three targets, one screen</h3>
 <p>When two or three names cluster at the top, the staff compares them directly: overlaid
-percentile radars (vs the Big Ten), every Fit component, the Big-Ten-projected box line, and
-shooting/defense rates side by side, each with its one-line scouting note. The decision a coach
-actually makes — <em>which of these wings?</em> — gets its own screen instead of a mental juggle across
-rows.</p>
-<h3>5d. Post-portal depth chart — tie every target to a roster hole</h3>
-<p>Finally, the engine projects the roster <strong>after</strong> the marked departures into a Guard / Wing /
-Big depth chart against a target rotation (4 / 2 / 3), shows exactly how many spots are open at
-each position, and lets the staff <strong>slot board targets into the holes</strong> and watch the rotation
-fill in. It closes the loop from "good player" back to "fills <em>our</em> November rotation."</p>
+percentile radars (vs the Big Ten), every Fit component, the projected box line, and
+shooting/defense rates side by side, each with its one-line scouting note. The decision a
+coach actually makes (which of these wings?) gets its own screen instead of a mental juggle
+across rows.</p>
+<h3>5d. Post-portal depth chart: tie every target to a roster hole</h3>
+<p>Finally, the engine projects the roster <em>after</em> the marked departures into a Guard / Wing /
+Big depth chart against a target rotation (4 / 2 / 3), shows how many spots are open at each
+position, and lets the staff slot board targets into the holes and watch the rotation fill
+in. It closes the loop from "good player" back to "fills <em>our</em> November rotation."</p>
 <h2>6. How I built it</h2>
 <ul>
 <li><strong>Language:</strong> Python 3.</li>
-<li><strong>Data / model:</strong> <code>pandas</code>, <code>numpy</code> — a small, readable package (<code>illini_fit/</code>) split into
-  <code>schema</code> (validated column map), <code>fetch</code> (cache + live refresh), <code>profile</code> (team + roster),
-  <code>needs</code> (departure-driven gap detection), <code>fit_score</code> (the scoring model), <code>translation</code>
-  (the Big Ten retention model), <code>similarity</code> (the style-comp engine), <code>precedent</code>
-  (outcome-backed comparable transfers), <code>trajectory</code> (multi-year development), and <code>scouting</code>
-  (radar + PDF cards).</li>
-<li><strong>App:</strong> <code>streamlit</code> — an interactive, Illini-themed web app: filters, weight sliders, a
-  ranked board with projected lines and a risers view, a post-portal depth chart, a head-to-head
-  compare screen, player detail with development trajectory + real precedents + scouting card,
-  and CSV + PDF export; <code>matplotlib</code> for the radars and <code>xhtml2pdf</code> for the printable card.</li>
-<li><strong>Quality:</strong> every module ships with self-checks run as <code>python -m illini_fit.&lt;module&gt;</code> —
-  data row-count/Illinois-parse assertions; a test that a shooting-weighted board surfaces
-  more shooters and scores stay in 0-100; that scoring deflates and efficiency holds in the
-  translation model; that a player is his own closest comp; that the precedent cohort is large
-  and its kept-% band is ordered; that a big BPM jump reads as a riser. The app is verified
-  headlessly with Streamlit's <code>AppTest</code>, including the compare and depth-chart interactions.</li>
+<li><strong>Data / model:</strong> <code>pandas</code> and <code>numpy</code>. A small, readable package (<code>illini_fit/</code>) split
+  into <code>schema</code> (validated column map), <code>fetch</code> (cache + live refresh), <code>profile</code> (team +
+  roster), <code>needs</code> (departure-driven gap detection), <code>fit_score</code> (the scoring model),
+  <code>translation</code> (the Big Ten retention model), <code>similarity</code> (the style-comp engine),
+  <code>precedent</code> (outcome-backed comparable transfers), <code>trajectory</code> (multi-year development),
+  and <code>scouting</code> (radar + PDF cards).</li>
+<li><strong>App:</strong> <code>streamlit</code>, an interactive Illini-themed web app: filters, weight sliders, a
+  ranked board with projected lines and a risers view, a post-portal depth chart, a
+  head-to-head compare screen, player detail with development trajectory plus real precedents
+  plus scouting card, and CSV + PDF export. <code>matplotlib</code> draws the radars and <code>xhtml2pdf</code>
+  renders the printable card.</li>
+<li><strong>Quality:</strong> every module ships with self-checks you run as
+  <code>python -m illini_fit.&lt;module&gt;</code>: data row-count and Illinois-parse assertions; a test that
+  a shooting-weighted board surfaces more shooters and that scores stay in 0-100; that
+  scoring deflates and efficiency holds in the translation model; that a player is his own
+  closest comp; that the precedent cohort is large and its kept-% band is ordered; that a big
+  BPM jump reads as a riser. The app itself is verified headlessly with Streamlit's
+  <code>AppTest</code>, including the compare and depth-chart interactions.</li>
 <li><strong>Deploy:</strong> GitHub + Streamlit Community Cloud (one-click, free) for a shareable live link.</li>
 </ul>
 <h2>7. Why it's useful to a GM / coaching staff</h2>
@@ -285,49 +285,50 @@ fill in. It closes the loop from "good player" back to "fills <em>our</em> Novem
 <li><strong>It starts the portal window with a shortlist, not a spreadsheet.</strong> Day one of the portal,
   the staff has a ranked, position-aware board instead of 1,500 names.</li>
 <li><strong>It's tied to <em>this</em> roster's needs.</strong> The board re-ranks the moment you mark a player as
-  leaving — so the night a starter enters the portal, you instantly see who replaces <em>his</em>
-  production, not just "good players."</li>
-<li><strong>It's explainable to non-analysts.</strong> Every score decomposes into production / role /
-  system / attainability with a one-line rationale. That's defensible in a staff meeting and
-  to a head coach who wants the <em>why</em>, not a black box.</li>
+  leaving. The night a starter enters the portal, you see who replaces <em>his</em> production, not
+  just "good players."</li>
+<li><strong>It's explainable to non-analysts.</strong> Every score breaks down into production / role /
+  system / attainability with a one-line rationale. That holds up in a staff meeting and with
+  a head coach who wants the <em>why</em>, not a black box.</li>
 <li><strong>It encodes Illinois's identity from data.</strong> Because system fit is derived from Illinois's
   actual profile (elite half-court offense, slow tempo, shooting), it won't recommend a
   player who is good in the abstract but wrong for how Illinois plays.</li>
-<li><strong>It translates production to <em>our</em> level — and shows the receipts.</strong> The Big Ten projection
+<li><strong>It translates production to <em>our</em> level, and shows the receipts.</strong> The Big Ten projection
   stops a 25-ppg low-major name from masquerading as a 25-ppg Big Ten name, and the precedent
-  engine backs every projection with <em>real named transfers</em> who made the same jump and a band of
-  what they actually kept — the single most common mistake in reading raw portal stats, with the
-  evidence attached.</li>
+  engine backs every projection with real named transfers who made the same jump plus a band
+  of what they actually kept. Misreading raw portal stats is the most common mistake in this
+  work, and here the evidence is attached.</li>
 <li><strong>It finds risers, not just last year's stars.</strong> Multi-year trajectories flag the ascending
-  sophomore the box score underrates and fade the one-year spike — exactly the edge a
+  sophomore the box score underrates and fade the one-year spike. That's exactly the edge a
   development program like Illinois wants.</li>
 <li><strong>It speaks the staff's language and closes the loop.</strong> "Plays like" comps frame an unknown
-  name in terms of players the room already knows; the compare screen settles <em>which of these
-  three wings</em>; the depth chart drops a target into an open rotation spot; and the 1-page PDF
-  card is something a coach can actually print and carry.</li>
-<li><strong>It's tunable on the fly.</strong> A coach who wants to prioritize a defensive guard over a
-  scoring one just moves a slider; the board updates in real time.</li>
+  name in terms of players the room already knows; the compare screen settles which of these
+  three wings; the depth chart drops a target into an open rotation spot; and the one-page PDF
+  card is something a coach can print and carry.</li>
+<li><strong>It's tunable on the fly.</strong> A coach who wants a defensive guard over a scoring one just
+  moves a slider, and the board updates in real time.</li>
 </ul>
-<p>In practice the staff intersects this board with the live portal list (which they have and
-which is not a clean public feed): the engine ranks the full pool by fit, and the staff
-filters to who's actually available. That mirrors how an analytics staffer already works —
-this just does the heavy ranking in seconds.</p>
-<h2>8. Honest limitations &amp; next steps</h2>
+<p>In practice the staff intersects this board with the live portal list (which they have, and
+which isn't a clean public feed): the engine ranks the full pool by fit, and the staff
+filters to who's actually available. That mirrors how an analytics staffer already works; this
+just does the heavy ranking in seconds.</p>
+<h2>8. Honest limitations and next steps</h2>
 <ul>
 <li><strong>Portal availability isn't a clean public dataset</strong>, so the engine ranks the full pool and
   is meant to be filtered to the live portal list. A natural v2 is to ingest a portal feed and
   auto-filter.</li>
-<li><strong>The Fit Score still reads one season</strong>, even though the development trajectories now add
-  multi-year context alongside it; a candidate with no prior D-I season (true freshmen, some
+<li><strong>The Fit Score still reads one season</strong>, though the development trajectories now add
+  multi-year context alongside it. A candidate with no prior D-I season (true freshmen, some
   internationals) has no trajectory, and play-type data (Synergy/Hudl, if licensed) would
   sharpen role fit further.</li>
-<li><strong>The translation model is a population average</strong> — which is exactly why the precedent engine
-  now sits next to it: rather than trusting a single deflated number, the staff sees the <em>band</em>
-  of what real comparable transfers actually kept. An individual can still beat or miss his
-  comps, so the engine surfaces the range and a level-jump risk label, not false precision.</li>
-<li><strong>Fit weights are a reasonable default, not gospel</strong> — which is exactly why they're exposed
-  as sliders for the staff to own.</li>
-<li><strong>No NIL/cost modeling.</strong> A real GM board would layer in budget; that data isn't public.</li>
+<li><strong>The translation model is a population average.</strong> That's exactly why the precedent engine
+  sits next to it: instead of trusting a single deflated number, the staff sees the band of
+  what real comparable transfers actually kept. An individual can still beat or miss his
+  comps, so the engine surfaces the range and a level-jump risk label rather than false
+  precision.</li>
+<li><strong>Fit weights are a reasonable default, not gospel</strong>, which is why they're exposed as
+  sliders for the staff to own.</li>
+<li><strong>No NIL/cost modeling.</strong> A real GM board would layer in budget, and that data isn't public.</li>
 </ul>
 <hr />
 <p><em>All data is publicly sourced from BartTorvik. Built as an independent analytics project for

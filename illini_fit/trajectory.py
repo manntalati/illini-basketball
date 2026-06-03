@@ -1,10 +1,10 @@
-"""Player development trajectories — who is rising, who is plateauing.
+"""Player development trajectories: who is rising, who is plateauing.
 
 The Fit Score reads a single season, which underrates ascending young players
-and overrates one-year spikes on bad teams. This module tracks the SAME player
-across seasons (stable ``pid``) and measures how his game moved year-over-year,
-so the board can flag genuine **risers** and **breakout** candidates a single
-box-score season hides — and so Player Detail can show a real development line
+and overrates one-year spikes on bad teams. This module tracks the same player
+across seasons (stable ``pid``) and measures how his game moved year over year.
+That lets the board flag genuine risers and breakout candidates a single
+box-score season hides, and lets Player Detail show a real development line
 instead of one static number.
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ _PREV_COLS = ["pid", "team", "yr"] + _CARRY
 
 
 def _rotation(df: pd.DataFrame, min_gp: int, min_min_pct: float) -> pd.DataFrame:
-    """Real rotation players only — so prior-season BPM isn't tiny-sample noise.
+    """Real rotation players only, so prior-season BPM isn't tiny-sample noise.
 
     Requiring a genuine role in BOTH seasons is what keeps the riser board
     honest: a +20 BPM 'jump' off a 5-minute freshman year is noise, not growth.
@@ -86,7 +86,7 @@ def attach_trajectory(board: pd.DataFrame, traj: pd.DataFrame) -> pd.DataFrame:
     """Left-join trajectory onto a scored board; non-matches = first D-I season."""
     out = board.copy()
     if traj is None or not len(traj):
-        out["traj_label"] = "—"
+        out["traj_label"] = "n/a"
         out["traj_index"] = np.nan
         for c in list(_DELTAS.values()) + [f"{c}_prev" for c in _CARRY] + ["team_prev"]:
             out[c] = np.nan

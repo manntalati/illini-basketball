@@ -1,16 +1,16 @@
-"""Precedent engine — outcome-backed projections from real comparable transfers.
+"""Precedent engine: outcome-backed projections from real comparable transfers.
 
-The Big Ten Translation model gives a *formula* answer ("~78% of scoring
-survives a jump this size"). This module backs that number with **named, real
-precedent**: for any target it finds the historical transfers who made the most
-similar level-jump from the most similar starting profile, then reports what
-*actually* happened to their box line the next season. The staff gets a
-**confidence band** ("5 players like him kept 71-88% of scoring, median 80%")
-instead of one false-precision number.
+The Big Ten Translation model gives a formula answer ("~78% of scoring survives
+a jump this size"). This module backs that number with named, real precedent:
+for any target it finds the historical transfers who made the most similar
+level-jump from the most similar starting profile, then reports what actually
+happened to their box line the next season. The staff gets a confidence band
+("5 players like him kept 71-88% of scoring, median 80%") instead of one
+false-precision number.
 
-It reuses exactly the public, cross-season BartTorvik data the translation model
-is calibrated on — the same player matched across seasons by stable ``pid`` —
-so nothing here is synthetic or assumed.
+It reuses the same public, cross-season BartTorvik data the translation model is
+calibrated on (the same player matched across seasons by stable ``pid``), so
+nothing here is synthetic or assumed.
 """
 from __future__ import annotations
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     band = precedent_band(prec, tgt["pts_pg"])
 
     print(f"Cohort of real up-transfers: {len(cohort)}\n")
-    print(f"{tgt['player']} ({tgt['team']}, {tgt['conf']}) — {tgt['pts_pg']:.1f} ppg, "
+    print(f"{tgt['player']} ({tgt['team']}, {tgt['conf']}): {tgt['pts_pg']:.1f} ppg, "
           f"jumping ~{model.illinois_barthag - tgt['team_barthag']:.2f} Barthag to Illinois\n")
     print("Most comparable real transfers (started similar, jumped similar):")
     print(prec.to_string(index=False))

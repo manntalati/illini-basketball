@@ -41,7 +41,7 @@ em {{ color: #4a5568; }}
 """
 
 TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>Illini Portal Fit Engine — Write-up</title><style>{css}</style></head>
+<title>Illini Portal Fit Engine: Write-up</title><style>{css}</style></head>
 <body>{body}</body></html>"""
 
 

@@ -4,11 +4,11 @@ Every candidate (non-Illinois D-I player with remaining eligibility) gets a
 0-100 Fit Score = weighted blend of four components, each 0-100 and each shown
 separately so any number is explainable:
 
-  1. production      — proven on-court value (BPM, porpag, minutes load)
-  2. role_fit        — does their position fill a depleted Illinois spot?
-  3. system_fit      — do their strengths match what Illinois needs (the
-                       stat-priority weights from `needs`)?
-  4. attainability   — realism of landing them, from their team's strength
+  1. production: proven on-court value (BPM, porpag, minutes load)
+  2. role_fit: does their position fill a depleted Illinois spot?
+  3. system_fit: do their strengths match what Illinois needs (the
+     stat-priority weights from `needs`)?
+  4. attainability: realism of landing them, from their team's strength
 
 Components are percentile-ranked *within the candidate pool*, so a score answers
 "how does this player compare to other realistic targets," which is how a staff
